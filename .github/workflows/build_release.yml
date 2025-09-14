@@ -1,0 +1,29 @@
+# this workflow builds and pushes a release for iw4x-discord-bot
+# whenever a new release is made in the repository
+
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build iw4x-discord-bot
+        run: GOOS=linux GOARCH=amd64 go build -ldflags "-s -w"
+
+      - name: Add to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload ${{github.event.release.tag_name}} iw4x-discord-bot
