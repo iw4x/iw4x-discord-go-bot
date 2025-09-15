@@ -30,6 +30,8 @@ func create_send_response(header string, body string, s *discordgo.Session, m *d
 }
 
 func main() {
+	log.Print("iw4x-discord-bot: startup")
+
 	token := os.Getenv("IW4X_DISCORD_BOT_TOKEN") // the environment variable IW4X_DISCORD_BOT_TOKEN should hold the bot token
 
 	// spawn a new session
@@ -58,7 +60,12 @@ func main() {
 
 		// if nothing is given after the prefix, return
 		if len(opts) < 2 {
-			header := "Not enough arguments."
+			header := "Not enough arguments!"
+			body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
+			create_send_response(header, body, s, m)
+			return
+		} else if len(opts) > 2 { // if too many opts are given, return
+			header := "Too many arguments!"
 			body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
 			create_send_response(header, body, s, m)
 			return
@@ -92,8 +99,8 @@ func main() {
 			header, body := command() // calls `command` as a function, of which will be one of the matching key values
 			create_send_response(header, body, s, m)
 		} else {
-			header := "Invalid option"
-			body := "Invalid bot command: `" + opts[1] + "`"
+			header := "Invalid option!"
+			body := "Invalid bot command: `" + opts[1] + "`\nSee `!iw4x help` for more information on valid commands."
 			create_send_response(header, body, s, m)
 		}
 
