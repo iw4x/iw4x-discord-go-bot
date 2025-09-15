@@ -64,77 +64,34 @@ func main() {
 			return
 		}
 
-		// each command has its own function in commands.go,
-		// just to keep the source a bit more legible
-		// this switch is still necessary to call those functions, albeit a little spammy
-		// eta when golang gets rust match-esque thingy to make this less ugly
-		switch command := opts[1]; command {
+		// function map, maps key (user input command) to value pair (function name)
+		// every function in this map will return (string, string) - header, body
+		commands := map[string]func() (string, string) {
+			"help": command_help,
+			"install": command_install,
+			"docs": command_docs,
+			"discord": command_discord,
+			"github": command_github,
+			"redist": command_redist,
+			"repair": command_repair,
+			"dedicated": command_dedicated,
+			"vcredist": command_vcredist,
+			"unlockstats": command_unlockstats,
+			"performance": command_performance,
+			"fps": command_fps,
+			"fov": command_fov,
+			"nickname": command_nickname,
+			"console": command_console,
+			"directx": command_directx,
+		}
 
-		case "help":
-			header, body := command_help() // call command function
-			create_send_response(header, body, s, m) // have to pass in *discordgo.Session (s) and *discordgo.MessageCreate (m)
-
-		case "install":
-			header, body := command_install()
+		// `command` here is the keys associated value if the key exists, in this case a function name
+		// this checks to see if opts[1] (user input post-prefix) has a matching key
+		// in the function map, `exists` is what is being tested here
+		if command, exists := commands[opts[1]]; exists {
+			header, body := command() // calls `command` as a function, of which will be one of the matching key values
 			create_send_response(header, body, s, m)
-
-		case "docs":
-			header, body := command_docs()
-			create_send_response(header, body, s, m)
-
-		case "discord":
-			header, body := command_discord()
-			create_send_response(header, body, s, m)
-
-		case "github":
-			header, body := command_github()
-			create_send_response(header, body, s, m)
-
-		case "redist":
-			header, body := command_redist()
-			create_send_response(header, body, s, m)
-
-		case "repair":
-			header, body := command_repair()
-			create_send_response(header, body, s, m)
-
-		case "dedicated":
-			header, body := command_dedicated()
-			create_send_response(header, body, s, m)
-
-		case "vcredist":
-			header, body := command_vcredist()
-			create_send_response(header, body, s, m)
-
-		case "unlockstats":
-			header, body := command_unlockstats()
-			create_send_response(header, body, s, m)
-
-		case "performance":
-			header, body := command_performance()
-			create_send_response(header, body, s, m)
-
-		case "fps":
-			header, body := command_fps()
-			create_send_response(header, body, s, m)
-
-		case "fov":
-			header, body := command_fov()
-			create_send_response(header, body, s, m)
-
-		case "nickname":
-			header, body := command_nickname()
-			create_send_response(header, body, s, m)
-
-		case "console":
-			header, body := command_console()
-			create_send_response(header, body, s, m)
-
-		case "directx":
-			header, body := command_directx()
-			create_send_response(header, body, s, m)
-
-		default:
+		} else {
 			header := "Invalid option"
 			body := "Invalid bot command: `" + opts[1] + "`"
 			create_send_response(header, body, s, m)
