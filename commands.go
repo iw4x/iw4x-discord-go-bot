@@ -40,11 +40,24 @@ func command_help() (string, string) {
 }
 
 func command_install() (string, string) {
-	header := "Installing IW4x"
+	header := "Installing/updating IW4x"
 
-	var output = []string{"Instructions for installing IW4x can be found at:",
-	"- Manual: https://docs." + base_url + "install/manual/",
-	"    - If you're installing on Linux, you may add `iw4x.exe` as a non-Steam game option in your Steam client, and run it with proton."}
+	var output = []string{"Currently, installing and updating IW4x should be done manually.",
+	"",
+	"- Installing/updating",
+	"  1. Download the current release of `iw4x.dll` from: https://github.com/iw4x/iw4x-client/releases/latest",
+	"  2. Download the current release of `release.zip` from: https://github.com/iw4x/iw4x-rawfiles/releases/latest",
+	"  3. On your Steam client, right-click on **Call of Duty: Modern Warfare 2** in your Steam library.",
+	"  4. Hover your cursor over **Manage**.",
+	"  5. Left-click on **Browse local files**, this will open your game folder.",
+	"  6. Move the `iw4x.dll` file downloaded in step 1 to this folder.",
+	"    - If you are updating from an old release of the client, replace the old `iw4x.dll` in this folder with the new one.",
+	"  7. Unzip/extract `release.zip` into your game folder- the same location as `iw4x.dll`.",
+	"    - If you are updating from an old release of the rawfiles, replace all conflicting files in this folder with those from the new `release.zip`.",
+	"",
+	"- Launching IW4x",
+	"  - Windows: Double left-click on `iw4x.exe` in your games directory.",
+	"  - Linux: You may add `iw4x.exe` as a non-Steam game in your Steam client, and run it with proton."}
 
 	body := strings.Join(output[:], "\n")
 
