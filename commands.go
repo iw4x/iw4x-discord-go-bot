@@ -29,6 +29,7 @@ func command_help() (string, string) {
 	"- `!iw4x nickname` - Information on changing your in-game name",
 	"- `!iw4x console` - Information on the in-game command console",
 	"- `!iw4x directx` - Information on installing DirectX",
+	"- `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles",
 	"",
 	"If you would like more information about IW4x, visit the official documentation at https://docs." + base_url}
 
@@ -273,6 +274,21 @@ func command_directx() (string, string) {
 	"4. Try running IW4x again. If you are still facing problems, please restart your computer.",
 	"",
 	"If this did not solve your issue, please describe the problem in the <#1382046854753026079> channel."}
+
+	body := strings.Join(output[:], "\n")
+
+	return header, body
+}
+
+func command_rawfiles() (string, string) {
+	header := "Installing/repairing rawfiles"
+
+	var output = []string{"Errors referencing missing files or, for example, `Couldn't load image 'button_a'` are a result of a broken/missing rawfiles installation.",
+	"",
+	"To fix this, download `release.zip` from https://github.com/iw4x/iw4x-rawfiles/releases/latest and extract/unzip this file in your game directory.",
+	"- If you are replacing an older rawfiles installation, replace all conflicting files in this directory with the new ones from the new `release.zip`.",
+	"",
+	"For more information, see the `!iw4x install` command."}
 
 	body := strings.Join(output[:], "\n")
 

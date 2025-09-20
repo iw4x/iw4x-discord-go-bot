@@ -90,6 +90,7 @@ func main() {
 			"nickname": command_nickname,
 			"console": command_console,
 			"directx": command_directx,
+			"rawfiles": command_rawfiles,
 		}
 
 		// `command` here is the keys associated value if the key exists, in this case a function name
