@@ -14,9 +14,9 @@ import (
 // begin with this
 const prefix string = "!iw4x"
 
-// builds embeds and sends output for all commands to reduce spam in switch statement below
-// header and body are passed into this from the switch statement below, and the switch statement below
-// fetches this information from each commands function in commands.go
+// builds embeds and sends output for all commands
+// header and body are passed into this from the function map call below,
+// map call fetches this information from each commands function in commands.go
 func create_send_response(header string, body string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	embed := &discordgo.MessageEmbed {
 		Title: header,

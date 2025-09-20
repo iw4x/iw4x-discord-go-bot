@@ -22,6 +22,9 @@ jobs:
       - name: Build iw4x-discord-bot
         run: GOOS=linux GOARCH=amd64 go build -ldflags "-s -w"
 
+      - name: sha256sum binary
+        run: sha256sum iw4x-discord-bot
+
       - name: Add to release
         env:
           GH_TOKEN: ${{ github.token }}
