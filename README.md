@@ -24,6 +24,7 @@ DXVK instructions will be readded once the state of the launcher is clear.
 - `!iw4x nickname` - Information on changing your in-game name
 - `!iw4x console` - Information on the in-game command console
 - `!iw4x directx` - Information on installing DirectX
+- `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles
 
 # Building
 
