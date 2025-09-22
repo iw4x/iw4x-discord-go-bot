@@ -56,10 +56,13 @@ func command_install() (string, string) {
 	"  7. Move the `iw4x.exe` file downloaded in step 2 to this folder.",
 	"  8. Unzip/extract the `release.zip` downloaded in step 2 into your game folder- the same location as `iw4x.dll`.",
 	"    - If you are updating from an old release of the rawfiles, replace all conflicting files in this folder with those from the new `release.zip`.",
+	"    - Make sure this is extracted into the root of this folder, and **not** into a folder called `release` or otherwise. After extracting, you should have an `iw4x` folder in your main game directory.",
 	"",
 	"- Launching IW4x",
 	"  - Windows: Double left-click on `iw4x.exe` in your games directory.",
-	"  - Linux: You may add `iw4x.exe` as a non-Steam game in your Steam client, and run it with proton."}
+	"  - Linux: You may add `iw4x.exe` as a non-Steam game in your Steam client, and run it with Proton.",
+	"",
+	"There is also a detailed guide (with pictures!) available at: https://docs.iw4x.io/guides/install-windows/"}
 
 	body := strings.Join(output[:], "\n")
 
