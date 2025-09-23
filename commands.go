@@ -43,26 +43,15 @@ func command_help() (string, string) {
 func command_install() (string, string) {
 	header := "Installing/updating IW4x"
 
-	var output = []string{"Currently, installing and updating IW4x should be done manually.",
+	var output = []string{"There is high quality documentation including images and GIFs available on the IW4x website.",
 	"",
-	"- Installing/updating",
-	"  1. Download the current release of `iw4x.dll` from: https://github.com/iw4x/iw4x-client/releases/latest",
-	"  2. Download the current release of `release.zip` **and** `iw4x.exe` from: https://github.com/iw4x/iw4x-rawfiles/releases/latest",
-	"  3. On your Steam client, right-click on **Call of Duty: Modern Warfare 2** in your Steam library.",
-	"  4. Hover your cursor over **Manage**.",
-	"  5. Left-click on **Browse local files**, this will open your game folder.",
-	"  6. Move the `iw4x.dll` file downloaded in step 1 to this folder.",
-	"    - If you are updating from an old release of the client, replace the old `iw4x.dll` in this folder with the new one",
-	"  7. Move the `iw4x.exe` file downloaded in step 2 to this folder.",
-	"  8. Unzip/extract the `release.zip` downloaded in step 2 into your game folder- the same location as `iw4x.dll`.",
-	"    - If you are updating from an old release of the rawfiles, replace all conflicting files in this folder with those from the new `release.zip`.",
-	"    - Make sure this is extracted into the root of this folder, and **not** into a folder called `release` or otherwise. After extracting, you should have an `iw4x` folder in your main game directory.",
+	"- Installing/updating via launcher:",
+	"https://docs." + base_url + "get-started/quickstart",
 	"",
-	"- Launching IW4x",
-	"  - Windows: Double left-click on `iw4x.exe` in your games directory.",
-	"  - Linux: You may add `iw4x.exe` as a non-Steam game in your Steam client, and run it with Proton.",
-	"",
-	"There is also a detailed guide (with pictures!) available at: https://docs.iw4x.io/guides/install-windows/"}
+	"- Manual:",
+	"  - Windows: https://docs." + base_url + "get-started/manual-install/windows-guide/",
+	"  - Linux: https://docs." + base_url + "get-started/manual-install/linux-guide/",
+	"  - MacOS: https://docs." + base_url + "get-started/manual-install/macos-guide/"}
 
 	body := strings.Join(output[:], "\n")
 
