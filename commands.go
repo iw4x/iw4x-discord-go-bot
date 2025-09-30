@@ -45,8 +45,8 @@ func command_install() (string, string) {
 
 	var output = []string{"There is high quality documentation including images and GIFs available on the IW4x website.",
 	"",
-	"- Installing/updating via launcher:",
-	"https://docs." + base_url + "get-started/quickstart",
+	"- Installing/updating via launcher **(Recommended):**",
+	"  - https://docs." + base_url + "get-started/quickstart",
 	"",
 	"- Manual:",
 	"  - Windows: https://docs." + base_url + "get-started/manual-install/windows-guide/",
