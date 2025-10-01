@@ -73,6 +73,8 @@ func main() {
 
 		// function map, maps key (user input command) to value pair (function name)
 		// every function in this map will return (string, string) - header, body
+		// this could probably be a map of structs with predefined header/body values instead
+		// but this allows for additional complexity with the command output if needed and doesn't slow down too much
 		commands := map[string]func() (string, string) {
 			"help": command_help,
 			"install": command_install,
@@ -91,6 +93,7 @@ func main() {
 			"console": command_console,
 			"directx": command_directx,
 			"rawfiles": command_rawfiles,
+			"game": command_game,
 		}
 
 		// `command` here is the keys associated value if the key exists, in this case a function name

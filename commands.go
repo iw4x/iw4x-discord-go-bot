@@ -277,10 +277,27 @@ func command_rawfiles() (string, string) {
 
 	var output = []string{"Errors referencing missing files or, for example, `Couldn't load image 'button_a'` are a result of a broken/missing rawfiles installation.",
 	"",
-	"To fix this, download `release.zip` from https://github.com/iw4x/iw4x-rawfiles/releases/latest and extract/unzip this file in your game directory.",
-	"- If you are replacing an older rawfiles installation, replace all conflicting files in this directory with the new ones from the new `release.zip`.",
+	"To fix this, download `release.zip` and `.iwd` files from https://github.com/iw4x/iw4x-rawfiles/releases/latest",
+	"",
+	"1. Extract `release.zip` into the root directory of your game folder, and **not** into a directory called `release` or otherwise.",
+	"2. Copy all `.iwd` files to the `iw4x` directory in the root of your game folder.",
+	"",
+	"If you are replacing an older rawfiles installation, replace all conflicting files with the new ones.",
 	"",
 	"For more information, see the `!iw4x install` command."}
+
+	body := strings.Join(output[:], "\n")
+
+	return header, body
+}
+
+func command_game() (string, string) {
+	header := "Obtaining a copy of Call of Duty Modern Warfare 2"
+
+	var output = []string{"The **only** supported copy of MW2 is from [Steam](https://store.steampowered.com/app/10180/Call_of_Duty_Modern_Warfare_2_2009/). The Microsoft Store version of MW2 will not work.",
+	"",
+	"Support will not be provided for non-Steam copies of the game.",
+	""}
 
 	body := strings.Join(output[:], "\n")
 
