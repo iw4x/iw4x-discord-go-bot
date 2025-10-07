@@ -30,6 +30,7 @@ func command_help() (string, string) {
 	"- `!iw4x console` - Information on the in-game command console",
 	"- `!iw4x directx` - Information on installing DirectX",
 	"- `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles",
+	"- `!iw4x game` - Information on supported copies of MW2",
 	"",
 	"If you would like more information about IW4x, visit the official documentation at https://docs." + base_url}
 
