@@ -8,7 +8,12 @@ import (
 	"os/signal"
 	"syscall"
 	"strings"
+	"time"
 )
+
+// the iw4x domain is contained in a variable here to make it easier
+// to change in the future, if there are any more "events"
+const base_url string = "iw4x.io/" // this variable is global and applies to both status.go and commands.go
 
 // we'll ignore any message that doesn't
 // begin with this
@@ -108,6 +113,34 @@ func main() {
 			create_send_response(header, body, s, m)
 		}
 
+	})
+
+	// since the above is set to trigger on message send,
+	// this is set to trigger on Ready to set bot status
+	session.AddHandler(func(s *discordgo.Session, m *discordgo.Ready) {
+		// we'll fetch players immediately on ready, and then once every 1.5 minutes after
+		players := fetch_players()
+
+		err := s.UpdateCustomStatus("Current players: " + players)
+		if err != nil {
+			log.Print(err) // this is hardly fatal so just print to terminal on failure
+		}
+
+		// every 1.5 minutes
+		ticker := time.NewTicker(90 * time.Second)
+
+		go func() { // spawn another thread
+			// this will loop perpetually until the parent thread (main) is killed
+			// once the timer goes off (ticker.C), update the status
+			for range ticker.C {
+				players := fetch_players()
+
+				err := s.UpdateCustomStatus("Current players: " + players)
+				if err != nil {
+					log.Print(err)
+				}
+			}
+		}()
 	})
 
 	// tell discord our intent

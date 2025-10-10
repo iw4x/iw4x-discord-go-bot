@@ -4,10 +4,6 @@ import "strings"
 
 // all of the functions here need to return a title and body of type string
 // and main.go will construct a message and spit it out
-//
-// the iw4x domain is contained in a variable here to make it easier
-// to change in the future, if there are any more "events"
-const base_url string = "iw4x.io/"
 
 func command_help() (string, string) {
 	header := "Available Commands"
