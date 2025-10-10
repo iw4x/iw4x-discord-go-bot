@@ -13,26 +13,11 @@ import (
 
 // the iw4x domain is contained in a variable here to make it easier
 // to change in the future, if there are any more "events"
-const base_url string = "iw4x.io/" // this variable is global and applies to both status.go and commands.go
+const base_url string = "iw4x.io/" // this variable is global and applies to both util.go and commands.go
 
 // we'll ignore any message that doesn't
 // begin with this
 const prefix string = "!iw4x"
-
-// builds embeds and sends output for all commands
-// header and body are passed into this from the function map call below,
-// map call fetches this information from each commands function in commands.go
-func create_send_response(header string, body string, s *discordgo.Session, m *discordgo.MessageCreate) {
-	embed := &discordgo.MessageEmbed {
-		Title: header,
-		Description: body,
-		Color: 0x0ff00,
-	}
-
-	s.ChannelMessageSendEmbed(m.ChannelID, embed)
-
-	return
-}
 
 func main() {
 	log.Print("iw4x-discord-bot: startup")
@@ -67,12 +52,12 @@ func main() {
 		if len(opts) < 2 {
 			header := "Not enough arguments!"
 			body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
-			create_send_response(header, body, s, m)
+			create_send_response(header, body, *s, *m)
 			return
 		} else if len(opts) > 2 { // if too many opts are given, return
 			header := "Too many arguments!"
 			body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
-			create_send_response(header, body, s, m)
+			create_send_response(header, body, *s, *m)
 			return
 		}
 
@@ -106,11 +91,11 @@ func main() {
 		// in the function map, `exists` is what is being tested here
 		if command, exists := commands[opts[1]]; exists {
 			header, body := command() // calls `command` as a function, of which will be one of the matching key values
-			create_send_response(header, body, s, m)
+			create_send_response(header, body, *s, *m)
 		} else {
 			header := "Invalid option!"
 			body := "Invalid bot command: `" + opts[1] + "`\nSee `!iw4x help` for more information on valid commands."
-			create_send_response(header, body, s, m)
+			create_send_response(header, body, *s, *m)
 		}
 
 	})
@@ -119,48 +104,13 @@ func main() {
 	// this is set to trigger on Ready to set bot status
 	session.AddHandler(func(s *discordgo.Session, m *discordgo.Ready) {
 		// we'll fetch players immediately on ready, and then once every 1.5 minutes after
-		players := fetch_players()
-
-		err := s.UpdateStatusComplex(discordgo.UpdateStatusData { // https://pkg.go.dev/github.com/bwmarrin/discordgo#UpdateStatusData
-			Status: "online", // for some reason the bot is shy in the IW4x server, explicitly set online
-			Activities: []*discordgo.Activity { // https://pkg.go.dev/github.com/bwmarrin/discordgo#Activity
-				{
-					Type: 4, // https://pkg.go.dev/github.com/bwmarrin/discordgo#ActivityType
-					Name: "custom status", // i have no idea why this doesn't work without this but yeah
-					State: "Current players: " + players,
-				},
-			},
-		})
-
-		if err != nil {
-			log.Print(err) // this is hardly fatal so just print to terminal on failure
-		}
+		create_send_status(*s)
 
 		// every 1.5 minutes
 		ticker := time.NewTicker(90 * time.Second)
-
-		go func() { // spawn another thread
-			// this will loop perpetually until the parent thread (main) is killed
-			// once the timer goes off (ticker.C), update the status
-			for range ticker.C {
-				players := fetch_players()
-
-				err := s.UpdateStatusComplex(discordgo.UpdateStatusData {
-					Status: "online",
-					Activities: []*discordgo.Activity {
-						{
-							Type: 4,
-							Name: "custom status",
-							State: "Current players: " + players,
-						},
-					},
-				})
-
-				if err != nil {
-					log.Print(err)
-				}
-			}
-		}()
+		for range ticker.C { // this will trigger every time the timer is up
+			create_send_status(*s)
+		}
 	})
 
 	// tell discord our intent
