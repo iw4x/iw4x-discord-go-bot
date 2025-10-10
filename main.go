@@ -121,7 +121,17 @@ func main() {
 		// we'll fetch players immediately on ready, and then once every 1.5 minutes after
 		players := fetch_players()
 
-		err := s.UpdateCustomStatus("Current players: " + players)
+		err := s.UpdateStatusComplex(discordgo.UpdateStatusData { // https://pkg.go.dev/github.com/bwmarrin/discordgo#UpdateStatusData
+			Status: "online", // for some reason the bot is shy in the IW4x server, explicitly set online
+			Activities: []*discordgo.Activity { // https://pkg.go.dev/github.com/bwmarrin/discordgo#Activity
+				{
+					Type: 4, // https://pkg.go.dev/github.com/bwmarrin/discordgo#ActivityType
+					Name: "custom status", // i have no idea why this doesn't work without this but yeah
+					State: "Current players: " + players,
+				},
+			},
+		})
+
 		if err != nil {
 			log.Print(err) // this is hardly fatal so just print to terminal on failure
 		}
@@ -135,7 +145,17 @@ func main() {
 			for range ticker.C {
 				players := fetch_players()
 
-				err := s.UpdateCustomStatus("Current players: " + players)
+				err := s.UpdateStatusComplex(discordgo.UpdateStatusData {
+					Status: "online",
+					Activities: []*discordgo.Activity {
+						{
+							Type: 4,
+							Name: "custom status",
+							State: "Current players: " + players,
+						},
+					},
+				})
+
 				if err != nil {
 					log.Print(err)
 				}
