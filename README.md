@@ -2,8 +2,6 @@
 
 This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the moment primarily provides functionality to users seeking basic help / information.
 
-Currently active user count via status will be added once infra has recovered.
-
 DXVK instructions will be readded once the state of the launcher is clear.
 
 # Current valid command list:
