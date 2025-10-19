@@ -121,7 +121,7 @@ func command_repair() (string, string) {
 	"    - Right click on **Call of Duty: Modern Warfare 2** in your Steam library.",
 	"    - Hover your cursor over **Manage**.",
 	"    - Left click on **Browse local files.**",
-	"    - Remove IW4x rawfiles, or replace by re-extracting release.zip (available at https://github.com/iw4x/iw4x-rawfiles/releases) in the same directory.",
+	"    - Replace IW4x rawfiles by re-extracting release.zip (available at https://github.com/iw4x/iw4x-rawfiles/releases) in the same directory and replacing all `.iwd` files in the `iw4x` folder with fresh ones from the same website.",
 	"    - Replace iw4x.dll with a new copy, available at: https://github.com/iw4x/iw4x-client/releases",
 	"",
 	"If this did not solve your issue, please describe the problem in the <#1382046854753026079> channel."}
