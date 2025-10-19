@@ -2,8 +2,6 @@
 
 This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the moment primarily provides functionality to users seeking basic help / information.
 
-DXVK instructions will be readded once the state of the launcher is clear.
-
 # Current valid command list:
 
 - `!iw4x help` - Displays this help dialog
@@ -24,6 +22,8 @@ DXVK instructions will be readded once the state of the launcher is clear.
 - `!iw4x directx` - Information on installing DirectX
 - `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles
 - `!iw4x game` - Information on supported copies of MW2
+- `!iw4x dxvk` - Information on setting up DXVK
+- `!iw4x dlc` - Information on MW2 and IW4x DLC
 
 # Building
 
