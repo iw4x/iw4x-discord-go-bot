@@ -124,7 +124,7 @@ func command_repair() (string, string) {
 	"    - Replace IW4x rawfiles by re-extracting release.zip (available at https://github.com/iw4x/iw4x-rawfiles/releases) in the same directory and replacing all `.iwd` files in the `iw4x` folder with fresh ones from the same website.",
 	"    - Replace iw4x.dll with a new copy, available at: https://github.com/iw4x/iw4x-client/releases",
 	"",
-	"If this did not solve your issue, please describe the problem in the <#1382046854753026079> channel."}
+	"If this did not solve your issue, please describe the problem in the <#1420088697960796170> channel."}
 
 	body := strings.Join(output[:], "\n")
 
@@ -153,7 +153,7 @@ func command_vcredist() (string, string) {
 	"",
 	"If you are still having problems after installing it, please restart your computer.",
 	"",
-	"If this did not solve your issue, please describe the problem in the <#1382046854753026079> channel.",
+	"If this did not solve your issue, please describe the problem in the <#1420088697960796170> channel.",
 	"",
 	"If you get errors related to d3d9.dll or xinput1_3.dll, see the `!iw4x directx` command for information."}
 
