@@ -84,6 +84,8 @@ func main() {
 			"directx": command_directx,
 			"rawfiles": command_rawfiles,
 			"game": command_game,
+			"dxvk": command_dxvk,
+			"dlc": command_dlc,
 		}
 
 		// `command` here is the keys associated value if the key exists, in this case a function name

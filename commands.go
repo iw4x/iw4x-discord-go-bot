@@ -3,7 +3,7 @@ package main
 import "strings"
 
 // all of the functions here need to return a title and body of type string
-// and main.go will construct a message and spit it out
+// and main.go will call a function to construct a message and spit it out
 
 func command_help() (string, string) {
 	header := "Available Commands"
@@ -31,7 +31,7 @@ func command_help() (string, string) {
 	"If you would like more information about IW4x, visit the official documentation at https://docs." + base_url}
 
 	// join `output` into one string to be passed back
-	// \n is our field separator here.
+	// \n is our field separator here
 	body := strings.Join(output[:], "\n")
 
 	return header, body
@@ -262,7 +262,7 @@ func command_directx() (string, string) {
 	"3. Run `dxwebsetup.exe` by double-clicking it, and follow the instructions.",
 	"4. Try running IW4x again. If you are still facing problems, please restart your computer.",
 	"",
-	"If this did not solve your issue, please describe the problem in the <#1382046854753026079> channel."}
+	"If this did not solve your issue, please describe the problem in the <#1420088697960796170> channel."}
 
 	body := strings.Join(output[:], "\n")
 
@@ -295,6 +295,48 @@ func command_game() (string, string) {
 	"",
 	"Support will not be provided for non-Steam copies of the game.",
 	""}
+
+	body := strings.Join(output[:], "\n")
+
+	return header, body
+}
+
+func command_dxvk() (string, string) {
+	header := "Installing/uninstalling DXVK"
+
+	var output = []string{"DXVK is a translation layer for Direct3D -> Vulkan.",
+	"",
+	"In some cases, DXVK can grant better performance and lessen stutters, and can be enabled via the IW4x launcher.",
+	"",
+	"- Installing:",
+	"  1. Right click on **Call of Duty: Modern Warfare 2** in your Steam library.",
+	"  2. Left click on **Manage**.",
+	"  3. Left click on **Browse local files**.",
+	"  4. Open the `config.json` in the `launcher` folder with a text editor.",
+	"  5. Change `false` after `dxvk:` to `true`",
+	"  6. Save the file and run the launcher.",
+	"",
+	"- Uninstalling:",
+	"  1. Change the `dxvk` value back to `false`.",
+	"  2. Delete the `d3d9.dll` file from the game folder.",
+	"",
+	"If you have any issues, please describe the problem in the <#1420088697960796170> channel."}
+
+	body := strings.Join(output[:], "\n")
+
+	return header, body
+}
+
+func command_dlc() (string, string) {
+	header := "MW2/IW4x DLC"
+
+	var output = []string{"There are two different DLCs- the official Modern Warfare 2 DLC packs and the IW4x DLCs.",
+	"",
+	"In the case of the MW2 DLC packs, Resurgence and Stimulus, they can be purchased from Steam:",
+	"- [Resurgence](https://store.steampowered.com/app/10196/Call_of_Duty_Modern_Warfare_2_Resurgence_Pack/)",
+	"- [Stimulus](https://store.steampowered.com/app/10195/Call_of_Duty_Modern_Warfare_2_Stimulus_Package/)",
+	"",
+	"In the case of IW4x DLCs, they will be installed by the launcher when you install IW4x."}
 
 	body := strings.Join(output[:], "\n")
 
