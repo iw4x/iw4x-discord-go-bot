@@ -62,7 +62,7 @@ func main() {
 		}
 
 		// staff-only commands
-		if check_permissions(*m) {
+		if check_permissions(m) {
 			switch staff_command := opts[1]; staff_command {
 			case "restart":
 				log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + "> triggered restart")
