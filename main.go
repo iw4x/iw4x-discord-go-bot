@@ -52,12 +52,12 @@ func main() {
 		if len(opts) < 2 {
 			header := "Not enough arguments!"
 			body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
-			create_send_response(header, body, *s, *m)
+			create_send_response(header, body, s, m)
 			return
 		} else if len(opts) > 2 { // if too many opts are given, return
 			header := "Too many arguments!"
 			body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
-			create_send_response(header, body, *s, *m)
+			create_send_response(header, body, s, m)
 			return
 		}
 
@@ -104,12 +104,12 @@ func main() {
 		// in the function map, `exists` is what is being tested here
 		if command, exists := commands[opts[1]]; exists {
 			header, body := command() // calls `command` as a function, of which will be one of the matching key values
-			create_send_response(header, body, *s, *m)
+			create_send_response(header, body, s, m)
 			return
 		} else {
 			header := "Invalid option!"
 			body := "Invalid bot command: `" + opts[1] + "`\nSee `!iw4x help` for more information on valid commands."
-			create_send_response(header, body, *s, *m)
+			create_send_response(header, body, s, m)
 			return
 		}
 
@@ -126,7 +126,7 @@ func main() {
 		// we'll fetch players immediately on ready, and then once every 1.5 minutes after
 		// this seems to fail occasionally, just rerun until it doesn't
 		for {
-			if create_send_status(*s) {
+			if create_send_status(s) {
 				break
 			}
 		}
@@ -139,7 +139,7 @@ func main() {
 			// handler thread
 			select {
 			case <-status_ticker.C: // listens for signal on timer
-				create_send_status(*s)
+				create_send_status(s)
 			case _, _ = <-stale: // this allows the thread to be killed by the new thread
 				return
 			}

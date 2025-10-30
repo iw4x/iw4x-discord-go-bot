@@ -17,7 +17,7 @@ import (
 // builds embeds and sends output for all commands
 // header and body are passed into this from the function map call below,
 // map call fetches this information from each commands function in commands.go
-func create_send_response(header string, body string, s discordgo.Session, m discordgo.MessageCreate) {
+func create_send_response(header string, body string, s *discordgo.Session, m *discordgo.MessageCreate) {
 	embed := &discordgo.MessageEmbed {
 		Title: header,
 		Description: body,
@@ -30,7 +30,7 @@ func create_send_response(header string, body string, s discordgo.Session, m dis
 }
 
 // builds and sends output for player count in status
-func create_send_status(s discordgo.Session) (bool) {
+func create_send_status(s *discordgo.Session) (bool) {
 	players := fetch_players()
 
 	if players != "0" {
