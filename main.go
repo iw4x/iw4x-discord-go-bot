@@ -61,6 +61,17 @@ func main() {
 			return
 		}
 
+		// staff-only commands
+		if check_permissions(*m) {
+			switch staff_command := opts[1]; staff_command {
+			case "restart":
+				log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + "> triggered restart")
+				s.ChannelMessageSend(m.ChannelID, "gn")
+				session.Close()
+				os.Exit(0)
+			}
+		}
+
 		// function map, maps key (user input command) to value pair (function name)
 		// every function in this map will return (string, string) - header, body
 		// this could probably be a map of structs with predefined header/body values instead
@@ -94,24 +105,44 @@ func main() {
 		if command, exists := commands[opts[1]]; exists {
 			header, body := command() // calls `command` as a function, of which will be one of the matching key values
 			create_send_response(header, body, *s, *m)
+			return
 		} else {
 			header := "Invalid option!"
 			body := "Invalid bot command: `" + opts[1] + "`\nSee `!iw4x help` for more information on valid commands."
 			create_send_response(header, body, *s, *m)
+			return
 		}
 
 	})
 
 	// since the above is set to trigger on message send,
 	// this is set to trigger on Ready to set bot status
-	session.AddHandler(func(s *discordgo.Session, m *discordgo.Ready) {
+	var stale chan bool // this is nil on first run
+	// when discord sends a new ready, the new thread will signal the old one to stop
+	session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		if stale != nil { close(stale) } // send signal if non nil
+		stale = make(chan bool) // this sets it non nil
+
 		// we'll fetch players immediately on ready, and then once every 1.5 minutes after
-		create_send_status(*s)
+		// this seems to fail occasionally, just rerun until it doesn't
+		for {
+			if create_send_status(*s) {
+				break
+			}
+		}
 
 		// every 1.5 minutes
-		ticker := time.NewTicker(90 * time.Second)
-		for range ticker.C { // this will trigger every time the timer is up
-			create_send_status(*s)
+		status_ticker := time.NewTicker(90 * time.Second)
+		for {
+			// this select will perpetually poll for events on both of these channels
+			// when this returns, and a new handler is spawned, it will kill the old
+			// handler thread
+			select {
+			case <-status_ticker.C: // listens for signal on timer
+				create_send_status(*s)
+			case _, _ = <-stale: // this allows the thread to be killed by the new thread
+				return
+			}
 		}
 	})
 
@@ -124,15 +155,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// when the bot terminates, close the session with discord
-	defer session.Close()
-
 	log.Print("iw4x-discord-bot: active")
 
-	// this allows the bot to be ctrl+c'd to kill it
+	// when this function returns, close the session with discord
+	defer session.Close()
+
+	// this allows the bot to be ctrl+c'd
+	// this isn't a graceful shutdown
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
 	log.Print("iw4x-discord-bot: shutdown")
+
+	return
 }

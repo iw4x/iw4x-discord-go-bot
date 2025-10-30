@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"strconv"
+	"slices"
 )
 
 // builds embeds and sends output for all commands
@@ -29,7 +30,7 @@ func create_send_response(header string, body string, s discordgo.Session, m dis
 }
 
 // builds and sends output for player count in status
-func create_send_status(s discordgo.Session) {
+func create_send_status(s discordgo.Session) (bool) {
 	players := fetch_players()
 
 	if players != "0" {
@@ -46,6 +47,7 @@ func create_send_status(s discordgo.Session) {
 
 		if err != nil {
 			log.Print(err)
+			return false
 		}
 	} else {
 		err := s.UpdateStatusComplex(discordgo.UpdateStatusData {
@@ -61,8 +63,11 @@ func create_send_status(s discordgo.Session) {
 
 		if err != nil {
 			log.Print(err)
+			return false
 		}
 	}
+
+	return true
 }
 
 
@@ -99,4 +104,17 @@ func fetch_players() (string) {
 	result_output := strconv.Itoa(result)
 
 	return result_output
+}
+
+// this is explicitly for staff only commands, and checks whether or not
+// the command issuer has the 'staff' role or not- if not, it will return 1.
+func check_permissions(m discordgo.MessageCreate) (bool) {
+	const staff_role_id string = "1111982635955277854"
+
+	// https://pkg.go.dev/github.com/bwmarrin/discordgo#Member
+	if slices.Contains(m.Member.Roles, staff_role_id) {
+		return true
+	} else {
+		return false
+	}
 }
