@@ -84,12 +84,14 @@ func fetch_players() (string) {
 	r, err := http.Get("https://master." + base_url + "v1/servers/iw4x?protocol=152")
 	if err != nil {
 		log.Print(err)
+		return "0"
 	}
 	defer r.Body.Close()
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Print(err)
+		return "0"
 	}
 
 	var response Response
