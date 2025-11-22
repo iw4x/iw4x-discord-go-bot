@@ -130,12 +130,14 @@ func main() {
 		if stale != nil { close(stale) } // send signal if non nil
 		stale = make(chan bool) // this sets it non nil
 
-		// we'll fetch players immediately on ready, and then once every 1.5 minutes after
-		// this seems to fail occasionally, just rerun until it doesn't
+		// we'll fetch players immediately on ready, and then once every 1.5 minutes
+		// after this seems to fail occasionally, just rerun until it doesn't, but
+		// wait before retrying to avoid tight loop
 		for {
 			if create_send_status(s) {
 				break
 			}
+      time.Sleep(5 * time.Second)
 		}
 
 		// every 1.5 minutes
