@@ -137,7 +137,7 @@ func main() {
 			if create_send_status(s) {
 				break
 			}
-      time.Sleep(5 * time.Second)
+			time.Sleep(5 * time.Second)
 		}
 
 		// every 1.5 minutes
