@@ -14,7 +14,6 @@ func command_help() (string, string) {
     "- `!iw4x docs` - IW4x documentation",
     "- `!iw4x discord` - Displays the invite link for this server",
     "- `!iw4x github` - Displays the link to IW4x source code.",
-    "- `!iw4x redist` - Information on installing DirectX and VC++ Redistributables (for error 0xc000007b)",
     "- `!iw4x repair` - Information on repairing your game files",
     "- `!iw4x dedicated` - Information on setting up a dedicated server",
     "- `!iw4x vcredist` - Information on installing VC++ Redistributables",
@@ -24,7 +23,7 @@ func command_help() (string, string) {
     "- `!iw4x fov` - Information on changing your FOV",
     "- `!iw4x nickname` - Information on changing your in-game name",
     "- `!iw4x console` - Information on the in-game command console",
-    "- `!iw4x directx` - Information on installing DirectX",
+    "- `!iw4x dxr` - Information on installing DirectX and VC++ Redistributables (Error 0xc000007b)",
     "- `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles",
     "- `!iw4x game` - Information on supported copies of MW2",
     "- `!iw4x dxvk` - Information on setting up DXVK",
@@ -84,21 +83,6 @@ func command_github() (string, string) {
 
     var output = []string{"The source code for IW4x can be found at:",
     "- https://github.com/iw4x/"}
-
-    body := strings.Join(output[:], "\n")
-
-    return header, body
-}
-
-func command_redist() (string, string) {
-    header := "Installing redistributables / Solving error 0xc000007b"
-
-    var output = []string{"Be sure to install both DirectX and VC++ Redistributable 2005 from:",
-    "- https://www.microsoft.com/en-us/download/details.aspx?id=26347",
-    "    - Be sure you download the `x86` version.",
-    "- https://www.microsoft.com/en-us/download/details.aspx?id=35",
-    "",
-    "If you need more information, please see `!iw4x vcredist` and `!iw4x directx`"}
 
     body := strings.Join(output[:], "\n")
 
@@ -254,15 +238,17 @@ func command_console() (string, string) {
     return header, body
 }
 
-func command_directx() (string, string) {
-    header := "Installing DirectX"
+func command_dxr() (string, string) {
+    header := "Installing DirectX/Redist, error 0xc000007b"
 
     var output = []string{"Errors referencing `d3d9.dll` and/or `xinput1_3.dll` are a result of a missing or broken DirectX installation.",
     "",
     "1. Make sure you haven't downloaded any of the dll files from the internet, if you have, **please delete them**.",
-    "2. Download DirectX from Microsoft at: https://www.microsoft.com/en-us/download/details.aspx?id=35",
+    "2. Download DirectX from Microsoft [here](https://www.microsoft.com/en-us/download/details.aspx?id=35).",
     "3. Run `dxwebsetup.exe` by double-clicking it, and follow the instructions.",
     "4. Try running IW4x again. If you are still facing problems, please restart your computer.",
+    "",
+    "If you are experiencing error `0xc000007b`, be sure to install both DirectX from the link above, as well as the VC++ Redistributable 2005 from Microsoft [here](https://www.microsoft.com/en-us/download/details.aspx?id=26347).",
     "",
     "If this did not solve your issue, please describe the problem in the <#1420088697960796170> channel."}
 

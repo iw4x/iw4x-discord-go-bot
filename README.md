@@ -9,7 +9,6 @@ This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the mome
 - `!iw4x docs` - IW4x documentation
 - `!iw4x discord` - Displays the invite link for this server
 - `!iw4x github` - Displays the link to IW4x source code.
-- `!iw4x redist` - Information on installing DirectX and VC++ Redistributables (for error 0xc000007b)
 - `!iw4x repair` - Information on repairing your game files
 - `!iw4x dedicated` - Information on setting up a dedicated server
 - `!iw4x vcredist` - Information on installing VC++ Redistributables
@@ -19,7 +18,7 @@ This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the mome
 - `!iw4x fov` - Information on changing your FOV
 - `!iw4x nickname` - Information on changing your in-game name
 - `!iw4x console` - Information on the in-game command console
-- `!iw4x directx` - Information on installing DirectX
+- `!iw4x dxr` - Information on installing DirectX and VC++ Redistributables (Error 0xc000007b)
 - `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles
 - `!iw4x game` - Information on supported copies of MW2
 - `!iw4x dxvk` - Information on setting up DXVK
