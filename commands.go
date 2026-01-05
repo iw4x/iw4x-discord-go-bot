@@ -167,7 +167,7 @@ func command_performance() (string, string) {
     header := "Improving game performance"
 
     var output = []string{"There is a performance improvement guide available at:",
-    "- https://" + base_url + "guides/performance"}
+    "- https://docs." + base_url + "guides/performance"}
 
     body := strings.Join(output[:], "\n")
 
