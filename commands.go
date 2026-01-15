@@ -119,7 +119,7 @@ func command_dedicated() (string, string) {
     header := "Setting up a dedicated server"
 
     var output = []string{"There are detailed instructions at:",
-    "- https://" + base_url + "servers/dedicated-server/"}
+    "- https://docs." + base_url + "hosting/server-hosting/"}
 
     body := strings.Join(output[:], "\n")
 
