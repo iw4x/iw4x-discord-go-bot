@@ -21,7 +21,6 @@ This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the mome
 - `!iw4x dxr` - Information on installing DirectX and VC++ Redistributables (Error 0xc000007b)
 - `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles
 - `!iw4x game` - Information on supported copies of MW2
-- `!iw4x dxvk` - Information on setting up DXVK
 - `!iw4x dlc` - Information on MW2 and IW4x DLC
 
 # Building

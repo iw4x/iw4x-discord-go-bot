@@ -96,7 +96,6 @@ func main() {
             "dxr": command_dxr,
             "rawfiles": command_rawfiles,
             "game": command_game,
-            "dxvk": command_dxvk,
             "dlc": command_dlc,
         }
 

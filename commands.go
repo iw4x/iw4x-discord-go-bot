@@ -26,7 +26,6 @@ func command_help() (string, string) {
     "- `!iw4x dxr` - Information on installing DirectX and VC++ Redistributables (Error 0xc000007b)",
     "- `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles",
     "- `!iw4x game` - Information on supported copies of MW2",
-    "- `!iw4x dxvk` - Information on setting up DXVK",
     "- `!iw4x dlc` - Information on MW2 and IW4x DLC",
     "",
     "If you would like more information about IW4x, visit the official documentation at https://docs." + base_url}
@@ -283,32 +282,6 @@ func command_game() (string, string) {
     "",
     "Support will not be provided for non-Steam copies of the game.",
     ""}
-
-    body := strings.Join(output[:], "\n")
-
-    return header, body
-}
-
-func command_dxvk() (string, string) {
-    header := "Installing/uninstalling DXVK"
-
-    var output = []string{"DXVK is a translation layer for Direct3D -> Vulkan.",
-    "",
-    "In some cases, DXVK can grant better performance and lessen stutters, and can be enabled via the IW4x launcher.",
-    "",
-    "- Installing:",
-    "  1. Right click on **Call of Duty: Modern Warfare 2** in your Steam library.",
-    "  2. Left click on **Manage**.",
-    "  3. Left click on **Browse local files**.",
-    "  4. Open the `config.json` in the `launcher` folder with a text editor.",
-    "  5. Change `false` after `dxvk:` to `true`",
-    "  6. Save the file and run the launcher.",
-    "",
-    "- Uninstalling:",
-    "  1. Change the `dxvk` value back to `false`.",
-    "  2. Delete the `d3d9.dll` file from the game folder.",
-    "",
-    "If you have any issues, please describe the problem in the <#1420088697960796170> channel."}
 
     body := strings.Join(output[:], "\n")
 
