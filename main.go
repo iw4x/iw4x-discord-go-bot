@@ -19,6 +19,9 @@ const base_url string = "iw4x.io/" // this variable is global and applies to bot
 // begin with this
 const prefix string = "!iw4x"
 
+// staff role ID for privileged command authentication
+const staff_role_id string = "1111982635955277854"
+
 func main() {
     log.Print("iw4x-discord-bot: startup")
 
@@ -67,9 +70,13 @@ func main() {
         if check_permissions(m) {
             switch staff_command := opts[1]; staff_command {
             case "restart":
-                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + "> triggered restart")
+				command_timer := time.Now()
+                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> triggered restart")
                 s.ChannelMessageSend(m.ChannelID, "gn")
+				log.Print("iw4x-discord-bot: closing session")
                 session.Close()
+				command_duration := time.Since(command_timer)
+				log.Print("iw4x-discord-bot: session closed after ", command_duration, ", goodnight!")
                 os.Exit(0)
             }
         }

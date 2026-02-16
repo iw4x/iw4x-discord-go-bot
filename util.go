@@ -111,8 +111,6 @@ func fetch_players() (string) {
 // this is explicitly for staff only commands, and checks whether or not
 // the command issuer has the 'staff' role or not- if not, it will return 1.
 func check_permissions(m *discordgo.MessageCreate) (bool) {
-    const staff_role_id string = "1111982635955277854"
-
     // https://pkg.go.dev/github.com/bwmarrin/discordgo#Member
     if slices.Contains(m.Member.Roles, staff_role_id) {
         return true
