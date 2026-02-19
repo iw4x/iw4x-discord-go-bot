@@ -1,3 +1,4 @@
 # commands can be created if one runs `go build *.go` as opposed to `go build`
 /commands
 /iw4x-discord-bot
+/iw4xchat.log

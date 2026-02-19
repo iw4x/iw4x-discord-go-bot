@@ -3,6 +3,7 @@ package main
 import (
     "github.com/bwmarrin/discordgo"
 
+	"log/slog"
     "log"
     "os"
     "os/signal"
@@ -27,6 +28,18 @@ func main() {
 
     token := os.Getenv("IW4X_DISCORD_BOT_TOKEN") // the environment variable IW4X_DISCORD_BOT_TOKEN should hold the bot token
 
+	// message logging stuff, this can be kept open so not inside of the handler
+	location := os.Getenv("PWD") // get the directory the bot is being run from, we can just log to a file right next to the bin
+	
+	f, err := os.OpenFile(location + "/iw4xchat.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644) // the file to log to
+	if err != nil {
+		log.Fatal("iw4x-discord-bot: could not open logfile ", err)
+	}
+	defer f.Close()
+
+	// create our message logger, we want normal logs for everything but chat messages
+	message_logger := slog.New(slog.NewJSONHandler(f, nil)) // f here is the file we opened above for logging
+	
     // spawn a new session
     session, err := discordgo.New("Bot " + token)
     if err != nil {
@@ -42,6 +55,18 @@ func main() {
         if m.Author.ID == s.State.User.ID {
             return
         }
+
+		// log user message before doing anything else with it
+		message_logger.Info(
+			"message-logger",
+			"type", "message",
+			"content", m.Content,
+			"message_ID", m.ID,
+			"channel_ID", m.ChannelID,	
+			"author_ID", m.Author.ID,
+			"author_username", m.Author.Username,
+			"author_nickname", m.Author.GlobalName,
+		)
 
         // split up user message by spaces
         opts := strings.Split(m.Content, " ")
@@ -160,6 +185,34 @@ func main() {
         }
     })
 
+	// log message deletion
+	session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDelete) {
+		message_logger.Info(
+			"message-logger",
+			"type", "deletion",
+			"message_ID", m.ID,
+			"channel_ID", m.ChannelID,
+		)
+
+		return
+	})
+
+	// log message edits
+	session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
+		message_logger.Info(
+			"message-logger",
+			"type", "edit",
+			"content", m.Content,
+			"message_ID", m.ID,
+			"channel_ID", m.ChannelID,
+			"author_ID", m.Author.ID,
+			"author_username", m.Author.Username,
+			"author_nickname", m.Author.GlobalName,
+		)
+
+		return
+	})
+	
     // tell discord our intent
     session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
