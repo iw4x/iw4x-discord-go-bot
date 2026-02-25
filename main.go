@@ -24,6 +24,9 @@ const prefix string = "!iw4x"
 // staff role ID for privileged command authentication
 const staff_role_id string = "1111982635955277854"
 
+// what message count to target to trigger a logfile cycle
+const cycle_logcount int = 10000
+
 func main() {
     log.Print("iw4x-discord-bot: startup")
 	
@@ -46,33 +49,31 @@ func main() {
 	if err := os.MkdirAll(log_archive_dir, 0755); err != nil {
 		log.Fatal("iw4x-discord-bot: failed to create log archive directory: ", err)
 	}
-	
-	// create a thread for logfile checking, this should never need to exit
-	// we check length here instead of keeping a timer to be sure it doesn't get reset
-	// this may have an overflow of a few messages- given how cheap text is, it's not a big deal and this will be consistently reliable
-    go func() {
-        log_ticker := time.NewTicker(2 * time.Hour) // every 2 hours we check the logfiles length 
 
-        for range log_ticker.C { // trigger every time log_ticker sends a signal
-            log.Print("iw4x-discord-bot: checking logfile length")
-            logcheck_timer := time.Now()
-            line_count := get_logfile_length(location)
-            logcheck_duration := time.Since(logcheck_timer)
-            log.Print("iw4x-discord-bot: logfile length check took: <", logcheck_duration, "> logfile length: <", line_count, ">")
-            if (line_count >= 10000) {
-                log.Print("iw4x-discord-bot: logfile has exceeded 10000 lines, cycling")
+    // on first startup / restart we need to check how large the message database is
+    message_count := get_logfile_length(location)
+
+    // this is the channel that will be used to listen for triggers to cycle logs
+    logfile_channel := make(chan bool)
+
+    // create a thread for logfile cycling
+    // this will perpetually listen and when it is sent a signal
+    // it will cycle the logfile, this should never need to exit
+    go func() {
+        for {
+            select {
+            case <-logfile_channel: // listens for signal on logfile_channel chan
                 logfile_cycle_timer := time.Now()
                 if ! cycle_logfile(location, log_archive_dir) {
                     log.Print("iw4x-discord-bot: failed to cycle logfile")
                 }
+                message_count = 0 // reset live log count
                 logfile_cycle_duration := time.Since(logfile_cycle_timer)
                 log.Print("iw4x-discord-bot: logfile cycle took: <", logfile_cycle_duration, ">")
-            } else {
-                continue
             }
         }
     }()
-	
+
     // spawn a new session
     session, err := discordgo.New("Bot " + token)
     if err != nil {
@@ -100,6 +101,17 @@ func main() {
             "author_username", m.Author.Username,
             "author_nickname", m.Author.GlobalName,
         )
+
+        // add to the message count
+        message_count++
+        if (message_count >= cycle_logcount) {
+            log.Print("iw4x-discord-bot: logfile has exceeded <", cycle_logcount, ">: triggering cycle")
+
+            // if the message count exceeds cycle_logcount, signal another thread to
+            // cycle the logfile- we do this in another thread to prevent this process
+            // from hanging up the bots message handling
+            logfile_channel <- true
+        }
 
         // split up user message by spaces
         opts := strings.Split(m.Content, " ")
