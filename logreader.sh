@@ -49,7 +49,6 @@ case "$1" in
                 m) message_id="$OPTARG" ;;
                 e) edited=true ;;
                 d) deleted=true ;;
-                h) help ;;
                 *) help ;;
             esac
         done
