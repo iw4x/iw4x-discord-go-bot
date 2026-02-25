@@ -3,6 +3,7 @@ package main
 import (
     "github.com/bwmarrin/discordgo"
 
+	"path/filepath"
 	"log/slog"
     "log"
     "os"
@@ -25,13 +26,13 @@ const staff_role_id string = "1111982635955277854"
 
 func main() {
     log.Print("iw4x-discord-bot: startup")
-
+	
     token := os.Getenv("IW4X_DISCORD_BOT_TOKEN") // the environment variable IW4X_DISCORD_BOT_TOKEN should hold the bot token
 
 	// message logging stuff, this can be kept open so not inside of the handler
 	location := os.Getenv("PWD") // get the directory the bot is being run from, we can just log to a file right next to the bin
 	
-	f, err := os.OpenFile(location + "/iw4xchat.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644) // the file to log to
+	f, err := os.OpenFile(filepath.Join(location, "iw4xchat.log"), os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644) // the file to log to
 	if err != nil {
 		log.Fatal("iw4x-discord-bot: could not open logfile ", err)
 	}
@@ -39,6 +40,39 @@ func main() {
 
 	// create our message logger, we want normal logs for everything but chat messages
 	message_logger := slog.New(slog.NewJSONHandler(f, nil)) // f here is the file we opened above for logging
+
+	// create directory for log archive if it doesn't exist already
+	log_archive_dir := filepath.Join(location, "archive")
+	if err := os.MkdirAll(log_archive_dir, 0755); err != nil {
+		log.Fatal("iw4x-discord-bot: failed to create log archive directory: ", err)
+	}
+	
+	// create a thread for logfile checking, this should never need to exit
+	// we check length here instead of keeping a timer to be sure it doesn't get reset
+	// this may have an overflow of a few messages- given how cheap text is, it's not a big deal and this will be consistently reliable
+	go func() {
+		log_ticker := time.NewTicker(2 * time.Hour) // every 2 hours we check the logfiles length 
+
+		for range log_ticker.C { // trigger every time log_ticker sends a signal
+			log.Print("iw4x-discord-bot: checking logfile length")
+			logcheck_timer := time.Now()
+			line_count := get_logfile_length(location)
+			logcheck_duration := time.Since(logcheck_timer)
+			log.Print("iw4x-discord-bot: logfile length check took: <", logcheck_duration, "> logfile length: <", line_count, ">")
+			
+			if (line_count >= 10000) {
+				log.Print("iw4x-discord-bot: logfile has exceeded 10000 lines, cycling")
+				logfile_cycle_timer := time.Now()
+				if ! cycle_logfile(location, log_archive_dir) {
+					log.Print("iw4x-discord-bot: failed to cycle logfile")
+				}
+				logfile_cycle_duration := time.Since(logfile_cycle_timer)
+				log.Print("iw4x-discord-bot: logfile cycle took: <", logfile_cycle_duration, ">")
+			} else {
+				continue
+			}
+		}
+	}()
 	
     // spawn a new session
     session, err := discordgo.New("Bot " + token)
@@ -101,7 +135,7 @@ func main() {
 				log.Print("iw4x-discord-bot: closing session")
                 session.Close()
 				command_duration := time.Since(command_timer)
-				log.Print("iw4x-discord-bot: session closed after ", command_duration, ", goodnight!")
+				log.Print("iw4x-discord-bot: session closed after: ", command_duration, ", goodnight!")
                 os.Exit(0)
             }
         }
@@ -217,10 +251,9 @@ func main() {
     session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
     // open discord session
-    err = session.Open()
-    if err != nil {
-        log.Fatal(err)
-    }
+    if err = session.Open(); err != nil {
+		log.Fatal(err)
+	} 
 
     log.Print("iw4x-discord-bot: active")
 
