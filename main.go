@@ -3,8 +3,8 @@ package main
 import (
     "github.com/bwmarrin/discordgo"
 
-	"path/filepath"
-	"log/slog"
+    "path/filepath"
+    "log/slog"
     "log"
     "os"
     "os/signal"
@@ -50,29 +50,28 @@ func main() {
 	// create a thread for logfile checking, this should never need to exit
 	// we check length here instead of keeping a timer to be sure it doesn't get reset
 	// this may have an overflow of a few messages- given how cheap text is, it's not a big deal and this will be consistently reliable
-	go func() {
-		log_ticker := time.NewTicker(2 * time.Hour) // every 2 hours we check the logfiles length 
+    go func() {
+        log_ticker := time.NewTicker(2 * time.Hour) // every 2 hours we check the logfiles length 
 
-		for range log_ticker.C { // trigger every time log_ticker sends a signal
-			log.Print("iw4x-discord-bot: checking logfile length")
-			logcheck_timer := time.Now()
-			line_count := get_logfile_length(location)
-			logcheck_duration := time.Since(logcheck_timer)
-			log.Print("iw4x-discord-bot: logfile length check took: <", logcheck_duration, "> logfile length: <", line_count, ">")
-			
-			if (line_count >= 10000) {
-				log.Print("iw4x-discord-bot: logfile has exceeded 10000 lines, cycling")
-				logfile_cycle_timer := time.Now()
-				if ! cycle_logfile(location, log_archive_dir) {
-					log.Print("iw4x-discord-bot: failed to cycle logfile")
-				}
-				logfile_cycle_duration := time.Since(logfile_cycle_timer)
-				log.Print("iw4x-discord-bot: logfile cycle took: <", logfile_cycle_duration, ">")
-			} else {
-				continue
-			}
-		}
-	}()
+        for range log_ticker.C { // trigger every time log_ticker sends a signal
+            log.Print("iw4x-discord-bot: checking logfile length")
+            logcheck_timer := time.Now()
+            line_count := get_logfile_length(location)
+            logcheck_duration := time.Since(logcheck_timer)
+            log.Print("iw4x-discord-bot: logfile length check took: <", logcheck_duration, "> logfile length: <", line_count, ">")
+            if (line_count >= 10000) {
+                log.Print("iw4x-discord-bot: logfile has exceeded 10000 lines, cycling")
+                logfile_cycle_timer := time.Now()
+                if ! cycle_logfile(location, log_archive_dir) {
+                    log.Print("iw4x-discord-bot: failed to cycle logfile")
+                }
+                logfile_cycle_duration := time.Since(logfile_cycle_timer)
+                log.Print("iw4x-discord-bot: logfile cycle took: <", logfile_cycle_duration, ">")
+            } else {
+                continue
+            }
+        }
+    }()
 	
     // spawn a new session
     session, err := discordgo.New("Bot " + token)
@@ -90,17 +89,17 @@ func main() {
             return
         }
 
-		// log user message before doing anything else with it
-		message_logger.Info(
-			"message-logger",
-			"type", "message",
-			"content", m.Content,
-			"message_ID", m.ID,
-			"channel_ID", m.ChannelID,	
-			"author_ID", m.Author.ID,
-			"author_username", m.Author.Username,
-			"author_nickname", m.Author.GlobalName,
-		)
+        // log user message before doing anything else with it
+        message_logger.Info(
+            "message-logger",
+            "type", "message",
+            "content", m.Content,
+            "message_ID", m.ID,
+            "channel_ID", m.ChannelID,	
+            "author_ID", m.Author.ID,
+            "author_username", m.Author.Username,
+            "author_nickname", m.Author.GlobalName,
+        )
 
         // split up user message by spaces
         opts := strings.Split(m.Content, " ")
@@ -129,13 +128,13 @@ func main() {
         if check_permissions(m) {
             switch staff_command := opts[1]; staff_command {
             case "restart":
-				command_timer := time.Now()
+                command_timer := time.Now()
                 log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> triggered restart")
                 s.ChannelMessageSend(m.ChannelID, "gn")
-				log.Print("iw4x-discord-bot: closing session")
+                log.Print("iw4x-discord-bot: closing session")
                 session.Close()
-				command_duration := time.Since(command_timer)
-				log.Print("iw4x-discord-bot: session closed after: ", command_duration, ", goodnight!")
+                command_duration := time.Since(command_timer)
+                log.Print("iw4x-discord-bot: session closed after: ", command_duration, ", goodnight!")
                 os.Exit(0)
             }
         }
@@ -221,39 +220,39 @@ func main() {
 
 	// log message deletion
 	session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDelete) {
-		message_logger.Info(
-			"message-logger",
-			"type", "deletion",
-			"message_ID", m.ID,
-			"channel_ID", m.ChannelID,
-		)
+        message_logger.Info(
+            "message-logger",
+            "type", "deletion",
+            "message_ID", m.ID,
+            "channel_ID", m.ChannelID,
+        )
 
-		return
-	})
+        return
+    })
 
 	// log message edits
 	session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
-		message_logger.Info(
-			"message-logger",
-			"type", "edit",
-			"content", m.Content,
-			"message_ID", m.ID,
-			"channel_ID", m.ChannelID,
-			"author_ID", m.Author.ID,
-			"author_username", m.Author.Username,
-			"author_nickname", m.Author.GlobalName,
-		)
+        message_logger.Info(
+            "message-logger",
+            "type", "edit",
+            "content", m.Content,
+            "message_ID", m.ID,
+            "channel_ID", m.ChannelID,
+            "author_ID", m.Author.ID,
+            "author_username", m.Author.Username,
+            "author_nickname", m.Author.GlobalName,
+        )
 
-		return
-	})
+        return
+    })
 	
     // tell discord our intent
     session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
     // open discord session
     if err = session.Open(); err != nil {
-		log.Fatal(err)
-	} 
+        log.Fatal(err)
+    }
 
     log.Print("iw4x-discord-bot: active")
 
