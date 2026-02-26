@@ -56,6 +56,9 @@ func main() {
     // this is the channel that will be used to listen for triggers to cycle logs
     logfile_channel := make(chan bool)
 
+    // this will hand back the new value to main
+    logfile_reset_channel := make(chan int)
+
     // create a thread for logfile cycling
     // this will perpetually listen and when it is sent a signal
     // it will cycle the logfile, this should never need to exit
@@ -67,7 +70,7 @@ func main() {
                 if ! cycle_logfile(location, log_archive_dir) {
                     log.Print("iw4x-discord-bot: failed to cycle logfile")
                 }
-                message_count = 0 // reset live log count
+                logfile_reset_channel <- 0
                 logfile_cycle_duration := time.Since(logfile_cycle_timer)
                 log.Print("iw4x-discord-bot: logfile cycle took: <", logfile_cycle_duration, ">")
             }
@@ -111,6 +114,7 @@ func main() {
             // cycle the logfile- we do this in another thread to prevent this process
             // from hanging up the bots message handling
             logfile_channel <- true
+            message_count = <-logfile_reset_channel
         }
 
         // split up user message by spaces
