@@ -18,6 +18,7 @@ import (
     "slices"
     "compress/gzip"
     "path/filepath"
+    "flag"
 )
 
 // builds embeds and sends output for all commands
@@ -76,6 +77,28 @@ func create_send_status(s *discordgo.Session) (bool) {
     return true
 }
 
+func create_send_query(s *discordgo.Session, m *discordgo.MessageCreate) {
+    file, err := os.Open("/tmp/queryresults.json")
+    if err != nil {
+        log.Print("iw4x-discord-bot: failed to send query results: ", err)
+        return
+    }
+    defer file.Close()
+
+    message := &discordgo.MessageSend{
+        Content: "Query results:",
+        Files: []*discordgo.File{
+            {
+                Name: "query_results.json",
+                Reader: file,
+            },
+        },
+    }
+
+    _, err = s.ChannelMessageSendComplex(m.ChannelID, message)
+
+    return
+}
 
 // gets and returns amount of active players
 func fetch_players() (string) {
@@ -126,7 +149,7 @@ func check_permissions(m *discordgo.MessageCreate) (bool) {
 }
 
 func get_logfile_length(location string) (int) {
-    logfile, err := os.Open(filepath.Join(location, "iw4xchat.log"))
+    logfile, err := os.Open(filepath.Join(location, "chatlog.json"))
     if err != nil {
         log.Print("iw4x-discord-bot: failed to read logfile size: ", err)
     }
@@ -146,7 +169,7 @@ func get_logfile_length(location string) (int) {
 }
 
 func cycle_logfile(location string, log_archive_dir string) (bool) {
-    logfile, err := os.Open(filepath.Join(location, "iw4xchat.log"))
+    logfile, err := os.Open(filepath.Join(location, "chatlog.json"))
     if err != nil {
         log.Print(err)
         return false
@@ -177,10 +200,110 @@ func cycle_logfile(location string, log_archive_dir string) (bool) {
     }
 
     // truncate logfile to clear it out
-    if err := os.Truncate(filepath.Join(location, "iw4xchat.log"), 0); err != nil {
+    if err := os.Truncate(filepath.Join(location, "chatlog.json"), 0); err != nil {
         log.Print(err)
         return false
     }
 
     return true
+}
+
+func query_db(location string, opts []string) ([]string) {
+    type Database struct {
+        MType string `json:"type"`
+        Content string `json:"content"`
+        MID string `json:"message_id"`
+        CID string `json:"channel_id"`
+        AID string `json:"author_id"`
+        AUsername string `json:"author_username"`
+        ANickname string `json:"author_nickname"`
+    }
+
+    // given these are discord messages, opt handling is a little bit odd
+    // we need to set up a few variables for potential opts to assign their values to
+    // any values given that aren't assigned here will simply be discarded
+    var m_value string
+    var c_value string
+    var a_value string
+    var u_value string
+    var n_value string
+    var d_value bool
+    var e_value bool
+    
+    flags := flag.NewFlagSet("querydb", flag.ContinueOnError)
+
+    flags.StringVar(&m_value, "m", "", "Message ID")
+    flags.StringVar(&c_value, "c", "", "Channel ID")
+    flags.StringVar(&a_value, "a", "", "Author ID")
+    flags.StringVar(&u_value, "u", "", "Author Username")
+    flags.StringVar(&n_value, "n", "", "Author Nickname")
+    
+    flags.BoolVar(&d_value, "d", false, "Deleted messages") // these just need to be toggled and do not take a value
+    flags.BoolVar(&e_value, "e", false, "Edited messages")
+    
+    if err := flags.Parse(opts[:]); err != nil {
+        log.Print("iw4x-discord-bot: failed to parse command arguments: ", err)
+        return nil
+    }
+    
+    file, err := os.Open(filepath.Join(location, "chatlog.json"))
+    if err != nil {
+        log.Print("iw4x-discord-bot: failed to query database: ", err)
+        return nil
+    }
+    defer file.Close()
+
+    // this is the slice we will populate matching lines into
+    var matching_db_entries []string
+
+    // this is used to track uniqueness so we don't populate duplicates
+    seen := make(map[string]bool)
+    
+    scanner := bufio.NewScanner(file)
+    
+    for scanner.Scan() {
+        line := scanner.Text()
+        keep := true
+        
+        var db Database
+        if err := json.Unmarshal([]byte(line), &db); err != nil {
+            log.Print("iw4x-discord-bot: failed to parse database entry: ", err)
+            continue
+        }
+
+        if m_value != "" && m_value != db.MID { // if m_value is empty, this opt probably wasnt specified
+            keep = false
+        }
+
+        if c_value != "" && c_value != db.CID {
+            keep = false
+        }
+
+        if a_value != "" && a_value != db.AID {
+            keep = false
+        }
+
+        if u_value != "" && u_value != db.AUsername {
+            keep = false
+        }
+
+        if n_value != "" && n_value != db.ANickname {
+            keep = false
+        }
+ 
+        if d_value && db.MType != "deletion" {
+            keep = false
+        }
+
+        if e_value && db.MType != "edit" {
+            keep = false
+        }
+        
+        if keep && !seen[line] {
+            matching_db_entries = append(matching_db_entries, line)
+            seen[line] = true
+        }
+    }
+    
+    return matching_db_entries
 }

@@ -1,6 +1,12 @@
 package main
 
-import "strings"
+import (
+    "strings"
+    "strconv"
+    "os"
+    "log"
+    "path/filepath"
+)
 
 // all of the functions here need to return a title and body of type string
 // and main.go will call a function to construct a message and spit it out
@@ -298,6 +304,45 @@ func command_dlc() (string, string) {
     "- [Stimulus](https://store.steampowered.com/app/10195/Call_of_Duty_Modern_Warfare_2_Stimulus_Package/)",
     "",
     "In the case of IW4x DLCs, they will be installed by the launcher when you install IW4x."}
+
+    body := strings.Join(output[:], "\n")
+
+    return header, body
+}
+
+// STAFF COMMANDS BELOW THIS POINT
+
+func command_staffhelp() (string, string) {
+    header := "Available Staff Commands"
+
+    var output = []string{"- `!iw4x staffhelp` - Displays this help dialog",
+    "- `!iw4x restart` - Sends the bot a signal to restart itself",
+    "- `!iw4x querydb -m <messageid> -c <channelid> -a <authorid> -u <authorusername> -n <authornickname> -d -e` - Query the message log database",
+    "    - This does not require all options, but requires at least one. In the case of `-d` and `-e`, this will filter the output to deleted and edited messages only.",
+    "- `!iw4x logstat` - Displays statistics about the message log"}
+
+    body := strings.Join(output[:], "\n")
+
+    return header, body
+}
+
+func command_logstat(message_count int, location string) (string, string) {
+    header := "Log Statistics"
+
+    // convert to string for reply
+    count_output := strconv.Itoa(message_count)
+    
+    logfile_stat, err := os.Stat(filepath.Join(location, "chatlog.json"))
+    if err != nil {
+        log.Print("iw4x-discord-bot: failed to stat active logfile: ", err)
+        return "", ""
+    }
+    logfile_size := logfile_stat.Size()
+    logfile_size_kilobytes := float64(logfile_size) / 1024
+    logfile_size_output := strconv.FormatFloat(logfile_size_kilobytes, 'f', 2, 64) 
+    
+    var output = []string{"Active entries: "+ count_output,
+    "Size of active logfile: " + logfile_size_output + "KB"}
 
     body := strings.Join(output[:], "\n")
 

@@ -11,6 +11,7 @@ import (
     "syscall"
     "strings"
     "time"
+    "encoding/json"
 )
 
 // the iw4x domain is contained in a variable here to make it easier
@@ -35,7 +36,7 @@ func main() {
 	// message logging stuff, this can be kept open so not inside of the handler
 	location := os.Getenv("PWD") // get the directory the bot is being run from, we can just log to a file right next to the bin
 	
-	f, err := os.OpenFile(filepath.Join(location, "iw4xchat.log"), os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644) // the file to log to
+	f, err := os.OpenFile(filepath.Join(location, "chatlog.json"), os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644) // the file to log to
 	if err != nil {
 		log.Fatal("iw4x-discord-bot: could not open logfile ", err)
 	}
@@ -125,36 +126,104 @@ func main() {
             return
         }
 
-        // if nothing is given after the prefix, return
         if len(opts) < 2 {
             header := "Not enough arguments!"
             body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
             create_send_response(header, body, s, m)
             log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
             return
-        } else if len(opts) > 2 { // if too many opts are given, return
-            header := "Too many arguments!"
-            body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
-            create_send_response(header, body, s, m)
-            log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
-            return
         }
-
+        
         // staff-only commands
         if check_permissions(m) {
             switch staff_command := opts[1]; staff_command {
             case "restart":
                 command_timer := time.Now()
                 log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> triggered restart")
+                
                 s.ChannelMessageSend(m.ChannelID, "gn")
                 log.Print("iw4x-discord-bot: closing session")
                 session.Close()
+                
                 command_duration := time.Since(command_timer)
                 log.Print("iw4x-discord-bot: session closed after: ", command_duration, ", goodnight!")
+                
                 os.Exit(0)
+            case "staffhelp":
+                command_timer := time.Now()
+                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested staffhelp")
+
+                header, body := command_staffhelp()
+                create_send_response(header, body, s, m)
+                
+                command_duration := time.Since(command_timer)
+                log.Print("iw4x-discord-bot: response to command: 'staffhelp' from staff member: <" + m.Author.ID + ":" + "m.Author.Username" + "> sent in: <", command_duration, ">")
+                return
+
+            case "querydb":
+                if len(opts) < 3 {
+                    header := "Not enough arguments!"
+                    body := "Expected `!iw4x querydb <opts>`.\nSee `!iw4x staffhelp` for more information on valid commands."
+                    create_send_response(header, body, s, m)
+                    return
+                }
+                
+                command_timer := time.Now()
+                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested querydb")
+
+                query_results := query_db(location, opts[2:]) // pass in only opts *after* '!iw4x querydb' as those are useless here.
+
+                // make results pretty for staff readability
+                // convert []string to []json.RawMessage
+                raw_objects := make([]json.RawMessage, len(query_results))
+                for i, str := range query_results {
+                    raw_objects[i] = json.RawMessage(str)
+                }
+
+                // we can now use MarshalIndent to "blow out" the structure of the message
+                pretty_query_results, err := json.MarshalIndent(raw_objects, "", "  ")
+                if err != nil {
+                    log.Print("iw4x-discord-bot: failed to make query results pretty: ", err)
+                }
+                
+                // write query results to file
+                if err := os.WriteFile("/tmp/queryresults.json", pretty_query_results, 0644); err != nil { 
+                    log.Print("iw4x-discord-bot: failed to write query results to temporary file: ", err)
+                    return
+                }
+                
+                // upload file to discord
+                create_send_query(s, m)
+
+                command_duration := time.Since(command_timer)
+                log.Print("iw4x-discord-bot: response to command: 'querydb' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
+
+                return
+                
+            case "logstat":
+                command_timer := time.Now()
+                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested logstat")
+
+                header, body := command_logstat(message_count, location)
+                create_send_response(header, body, s, m)
+                
+                command_duration := time.Since(command_timer)
+                log.Print("iw4x-discord-bot: response to command: 'logstat' from staff member: <" + m.Author.ID + ":" + "m.Author.Username" + "> sent in: <", command_duration, ">")
+
+                return
             }
         }
 
+        // this is done after the staff commands section because certain staff-only commands
+        // such as querydb expect a ton of opts as opposed to just requesting a help output
+        if len(opts) > 2 { // if too many opts are given, return
+            header := "Too many arguments!"
+            body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
+            create_send_response(header, body, s, m)
+            log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
+            return
+        }
+        
         // function map, maps key (user input command) to value pair (function name)
         // every function in this map will return (string, string) - header, body
         // this could probably be a map of structs with predefined header/body values instead

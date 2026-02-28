@@ -42,7 +42,7 @@ ${BOLD}Options:${CLEAR}
 case "$1" in
     help|--h|-h|'') help ;;
     *)
-        while getopts "a:c:m:hed" opts ; do
+        while getopts "a:c:m:ed" opts ; do
             case "${opts}" in
                 a) author_id="$OPTARG";;
                 c) channel_id="$OPTARG" ;;
