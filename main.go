@@ -245,7 +245,7 @@ func main() {
                 }
                 
                 command_duration := time.Since(command_timer)
-                log.Print("iw4x-discord-bot: response to command: 'logstat' from staff member: <" + m.Author.ID + ":" + "m.Author.Username" + "> sent in: <", command_duration, ">")
+                log.Print("iw4x-discord-bot: response to command: 'logstat' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
 
                 return
             }
