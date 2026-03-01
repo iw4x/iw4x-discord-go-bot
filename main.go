@@ -30,15 +30,19 @@ const cycle_logcount int = 15000
 
 func main() {
     log.Print("iw4x-discord-bot: startup")
-	
+
     token := os.Getenv("IW4X_DISCORD_BOT_TOKEN") // the environment variable IW4X_DISCORD_BOT_TOKEN should hold the bot token
+    if token == "" {
+        log.Print("iw4x-discord-bot: failed to acquire bot token, cannot continue")
+        return
+    }
 
     // message logging stuff, this can be kept open so not inside of the handler
     location, err := os.Getwd() // get the directory the bot is being run from, we can just log to a file right next to the bin
     if err != nil {
         log.Print("iw4x-discord-bot: failed to get current working directory: ", err)
     }
-	
+
     f, err := os.OpenFile(filepath.Join(location, "chatlog.json"), os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644) // the file to log to
     if err != nil {
         log.Fatal("iw4x-discord-bot: could not open logfile: ", err)
