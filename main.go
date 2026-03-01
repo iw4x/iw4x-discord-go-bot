@@ -109,6 +109,7 @@ func main() {
             "author_ID", m.Author.ID,
             "author_username", m.Author.Username,
             "author_nickname", m.Author.GlobalName,
+            "attachments", m.Attachments,
         )
 
         // add to the message count

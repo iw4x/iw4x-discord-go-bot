@@ -317,8 +317,8 @@ func command_staffhelp() (string, string) {
 
     var output = []string{"- `!iw4x staffhelp` - Displays this help dialog",
     "- `!iw4x restart` - Sends the bot a signal to restart itself",
-    "- `!iw4x querydb -m <messageid> -c <channelid> -a <authorid> -u <authorusername> -n <authornickname> -d -e` - Query the message log database",
-    "    - This does not require all options, but requires at least one. In the case of `-d` and `-e`, this will filter the output to deleted and edited messages only.",
+    "- `!iw4x querydb -m <messageid> -c <channelid> -a <authorid> -u <authorusername> -n <authornickname> -d -e -t` - Query the message log database",
+    "    - This does not require all options, but requires at least one. In the case of `-d`, `-e`, and `-t`, this will filter the output to deleted, edited, and messages with attachments only, respectively.",
     "- `!iw4x logstat` - Displays statistics about the message log"}
 
     body := strings.Join(output[:], "\n")

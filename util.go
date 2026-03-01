@@ -209,6 +209,8 @@ func cycle_logfile(location string, log_archive_dir string) (error) {
 }
 
 func query_db(location string, opts []string) ([]string, error) {
+    type Attachment struct {}
+
     type Database struct {
         MType string `json:"type"`
         Content string `json:"content"`
@@ -217,6 +219,7 @@ func query_db(location string, opts []string) ([]string, error) {
         AID string `json:"author_id"`
         AUsername string `json:"author_username"`
         ANickname string `json:"author_nickname"`
+        Attachments []Attachment `json:"attachments"`
     }
 
     // given these are discord messages, opt handling is a little bit odd
@@ -229,6 +232,7 @@ func query_db(location string, opts []string) ([]string, error) {
     var n_value string
     var d_value bool
     var e_value bool
+    var t_value bool
     
     flags := flag.NewFlagSet("querydb", flag.ContinueOnError)
 
@@ -237,9 +241,10 @@ func query_db(location string, opts []string) ([]string, error) {
     flags.StringVar(&a_value, "a", "", "Author ID")
     flags.StringVar(&u_value, "u", "", "Author Username")
     flags.StringVar(&n_value, "n", "", "Author Nickname")
-    
+
     flags.BoolVar(&d_value, "d", false, "Deleted messages") // these just need to be toggled and do not take a value
     flags.BoolVar(&e_value, "e", false, "Edited messages")
+    flags.BoolVar(&t_value, "t", false, "Attachment messages")
     
     if err := flags.Parse(opts[:]); err != nil {
         return nil, err
@@ -264,8 +269,10 @@ func query_db(location string, opts []string) ([]string, error) {
         keep := true
         
         var db Database
+
         if err := json.Unmarshal([]byte(line), &db); err != nil {
             log.Print("iw4x-discord-bot: failed to parse database entry: ", err)
+            log.Print(line)
             continue
         }
 
@@ -294,6 +301,10 @@ func query_db(location string, opts []string) ([]string, error) {
         }
 
         if e_value && db.MType != "edit" {
+            keep = false
+        }
+
+        if t_value && len(db.Attachments) == 0 {
             keep = false
         }
         
