@@ -24,21 +24,27 @@ import (
 // builds embeds and sends output for all commands
 // header and body are passed into this from the function map call below,
 // map call fetches this information from each commands function in commands.go
-func create_send_response(header string, body string, s *discordgo.Session, m *discordgo.MessageCreate) {
+func create_send_response(header string, body string, s *discordgo.Session, m *discordgo.MessageCreate) (error) {
     embed := &discordgo.MessageEmbed {
         Title: header,
         Description: body,
         Color: 0x0ff00,
     }
 
-    s.ChannelMessageSendEmbed(m.ChannelID, embed)
+    _, err := s.ChannelMessageSendEmbed(m.ChannelID, embed)
+    if err != nil {
+        return err
+    }
 
-    return
+    return nil
 }
 
 // builds and sends output for player count in status
-func create_send_status(s *discordgo.Session) (bool) {
-    players := fetch_players()
+func create_send_status(s *discordgo.Session) (error) {
+    players, err := fetch_players()
+    if err != nil {
+        return err
+    }
 
     if players != "0" {
         err := s.UpdateStatusComplex(discordgo.UpdateStatusData { // https://pkg.go.dev/github.com/bwmarrin/discordgo#UpdateStatusData
@@ -53,8 +59,7 @@ func create_send_status(s *discordgo.Session) (bool) {
         })
 
         if err != nil {
-            log.Print(err)
-            return false
+            return err
         }
     } else {
         err := s.UpdateStatusComplex(discordgo.UpdateStatusData {
@@ -69,19 +74,17 @@ func create_send_status(s *discordgo.Session) (bool) {
         })
 
         if err != nil {
-            log.Print(err)
-            return false
+            return err
         }
     }
 
-    return true
+    return nil
 }
 
-func create_send_query(s *discordgo.Session, m *discordgo.MessageCreate) {
+func create_send_query(s *discordgo.Session, m *discordgo.MessageCreate) (error) {
     file, err := os.Open("/tmp/queryresults.json")
     if err != nil {
-        log.Print("iw4x-discord-bot: failed to send query results: ", err)
-        return
+        return err
     }
     defer file.Close()
 
@@ -96,12 +99,15 @@ func create_send_query(s *discordgo.Session, m *discordgo.MessageCreate) {
     }
 
     _, err = s.ChannelMessageSendComplex(m.ChannelID, message)
+    if err != nil {
+        return err
+    }
 
-    return
+    return nil
 }
 
 // gets and returns amount of active players
-func fetch_players() (string) {
+func fetch_players() (string, error) {
     type Server struct {
         Client int `json:"clients"` // each `servers` entry contains a `clients` variable, pull that
     }
@@ -112,15 +118,13 @@ func fetch_players() (string) {
 
     r, err := http.Get("https://master." + base_url + "v1/servers/iw4x?protocol=152")
     if err != nil {
-        log.Print(err)
-        return "0"
+        return "0", err
     }
     defer r.Body.Close()
 
     body, err := ioutil.ReadAll(r.Body)
     if err != nil {
-        log.Print(err)
-        return "0"
+        return "0", err
     }
 
     var response Response
@@ -134,7 +138,7 @@ func fetch_players() (string) {
     // this needs to be a string when used for status, convert from int
     result_output := strconv.Itoa(result)
 
-    return result_output
+    return result_output, nil
 }
 
 // this is explicitly for staff only commands, and checks whether or not
@@ -148,10 +152,10 @@ func check_permissions(m *discordgo.MessageCreate) (bool) {
     }
 }
 
-func get_logfile_length(location string) (int) {
+func get_logfile_length(location string) (int, error) {
     logfile, err := os.Open(filepath.Join(location, "chatlog.json"))
     if err != nil {
-        log.Print("iw4x-discord-bot: failed to read logfile size: ", err)
+        return 0, err
     }
     defer logfile.Close() // close the file once this function returns 
 
@@ -162,17 +166,16 @@ func get_logfile_length(location string) (int) {
         line_count++
     }
     if err := scanner.Err(); err != nil {
-        log.Print("iw4x-discord-bot: failed to read logfile size: ", err)
+        return 0, err
     }
 	
-    return line_count
+    return line_count, nil
 }
 
-func cycle_logfile(location string, log_archive_dir string) (bool) {
+func cycle_logfile(location string, log_archive_dir string) (error) {
     logfile, err := os.Open(filepath.Join(location, "chatlog.json"))
     if err != nil {
-        log.Print(err)
-        return false
+        return err
     }
     defer logfile.Close()
 
@@ -182,33 +185,30 @@ func cycle_logfile(location string, log_archive_dir string) (bool) {
     archive_path := filepath.Join(log_archive_dir, formatted_now+".gz")
     destination, err := os.Create(archive_path)
     if err != nil {
-        log.Print(err)
-        return false
+        return err
     }
     defer destination.Close()
 
     gzip_writer, err := gzip.NewWriterLevel(destination, gzip.BestCompression) // https://pkg.go.dev/compress/flate#BestCompression
     if err != nil {
-        log.Print(err)
-        return false
+        return err
     }
     defer gzip_writer.Close()
 	
     if _, err := io.Copy(gzip_writer, logfile); err != nil {
-        log.Print(err)
-        return false
+        return err
     }
 
     // truncate logfile to clear it out
     if err := os.Truncate(filepath.Join(location, "chatlog.json"), 0); err != nil {
         log.Print(err)
-        return false
+        return err
     }
 
-    return true
+    return nil
 }
 
-func query_db(location string, opts []string) ([]string) {
+func query_db(location string, opts []string) ([]string, error) {
     type Database struct {
         MType string `json:"type"`
         Content string `json:"content"`
@@ -242,14 +242,12 @@ func query_db(location string, opts []string) ([]string) {
     flags.BoolVar(&e_value, "e", false, "Edited messages")
     
     if err := flags.Parse(opts[:]); err != nil {
-        log.Print("iw4x-discord-bot: failed to parse command arguments: ", err)
-        return nil
+        return nil, err
     }
     
     file, err := os.Open(filepath.Join(location, "chatlog.json"))
     if err != nil {
-        log.Print("iw4x-discord-bot: failed to query database: ", err)
-        return nil
+        return nil, err
     }
     defer file.Close()
 
@@ -304,6 +302,6 @@ func query_db(location string, opts []string) ([]string) {
             seen[line] = true
         }
     }
-    
-    return matching_db_entries
+
+    return matching_db_entries, nil
 }

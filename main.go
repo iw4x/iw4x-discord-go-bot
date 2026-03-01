@@ -26,7 +26,7 @@ const prefix string = "!iw4x"
 const staff_role_id string = "1111982635955277854"
 
 // what message count to target to trigger a logfile cycle
-const cycle_logcount int = 10000
+const cycle_logcount int = 15000
 
 func main() {
     log.Print("iw4x-discord-bot: startup")
@@ -52,7 +52,11 @@ func main() {
 	}
 
     // on first startup / restart we need to check how large the message database is
-    message_count := get_logfile_length(location)
+    message_count, err := get_logfile_length(location)
+    if err != nil {
+        log.Print("iw4x-discord-bot: failed to get logfile length: ", err)
+        return
+    }
 
     // this is the channel that will be used to listen for triggers to cycle logs
     logfile_channel := make(chan bool)
@@ -68,8 +72,9 @@ func main() {
             select {
             case <-logfile_channel: // listens for signal on logfile_channel chan
                 logfile_cycle_timer := time.Now()
-                if ! cycle_logfile(location, log_archive_dir) {
-                    log.Print("iw4x-discord-bot: failed to cycle logfile")
+                if err := cycle_logfile(location, log_archive_dir); err != nil {
+                    log.Print("iw4x-discord-bot: failed to cycle logfile", err)
+                    continue
                 }
                 logfile_reset_channel <- 0
                 logfile_cycle_duration := time.Since(logfile_cycle_timer)
@@ -129,7 +134,12 @@ func main() {
         if len(opts) < 2 {
             header := "Not enough arguments!"
             body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
-            create_send_response(header, body, s, m)
+
+            if err := create_send_response(header, body, s, m); err != nil {
+                log.Print("iw4x-discord-bot: failed to send command response: ", err)
+                return
+            }
+
             log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
             return
         }
@@ -154,7 +164,11 @@ func main() {
                 log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested staffhelp")
 
                 header, body := command_staffhelp()
-                create_send_response(header, body, s, m)
+
+                if err := create_send_response(header, body, s, m); err != nil {
+                    log.Print("iw4x-discord-bot: failed to send command response: ", err)
+                    return
+                }
                 
                 command_duration := time.Since(command_timer)
                 log.Print("iw4x-discord-bot: response to command: 'staffhelp' from staff member: <" + m.Author.ID + ":" + "m.Author.Username" + "> sent in: <", command_duration, ">")
@@ -164,14 +178,21 @@ func main() {
                 if len(opts) < 3 {
                     header := "Not enough arguments!"
                     body := "Expected `!iw4x querydb <opts>`.\nSee `!iw4x staffhelp` for more information on valid commands."
-                    create_send_response(header, body, s, m)
+
+                    if err := create_send_response(header, body, s, m); err != nil {
+                        log.Print("iw4x-discord-bot: failed to send command response: ", err)
+                    }
                     return
                 }
                 
                 command_timer := time.Now()
                 log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested querydb")
 
-                query_results := query_db(location, opts[2:]) // pass in only opts *after* '!iw4x querydb' as those are useless here.
+                query_results, err := query_db(location, opts[2:]) // pass in only opts *after* '!iw4x querydb' as those are useless here.
+                if err != nil {
+                    log.Print("iw4x-discord-bot: failed to query database: ", err)
+                    return
+                }
 
                 // make results pretty for staff readability
                 // convert []string to []json.RawMessage
@@ -193,7 +214,10 @@ func main() {
                 }
                 
                 // upload file to discord
-                create_send_query(s, m)
+                if err := create_send_query(s, m); err != nil {
+                    log.Print("iw4x-discord-bot: failed to upload query results to discord: ", err)
+                    return
+                }
 
                 command_duration := time.Since(command_timer)
                 log.Print("iw4x-discord-bot: response to command: 'querydb' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
@@ -205,7 +229,11 @@ func main() {
                 log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested logstat")
 
                 header, body := command_logstat(message_count, location)
-                create_send_response(header, body, s, m)
+
+                if err := create_send_response(header, body, s, m); err != nil {
+                    log.Print("iw4x-discord-bot: failed to send command response: ", err)
+                    return
+                }
                 
                 command_duration := time.Since(command_timer)
                 log.Print("iw4x-discord-bot: response to command: 'logstat' from staff member: <" + m.Author.ID + ":" + "m.Author.Username" + "> sent in: <", command_duration, ">")
@@ -282,7 +310,8 @@ func main() {
         // after this seems to fail occasionally, just rerun until it doesn't, but
         // wait before retrying to avoid tight loop
         for {
-            if create_send_status(s) {
+            if err := create_send_status(s); err != nil {
+                log.Print("iw4x-discord-bot: failed to send bot status: ", err)
                 break
             }
             time.Sleep(5 * time.Second)
@@ -296,7 +325,9 @@ func main() {
             // handler thread
             select {
             case <-status_ticker.C: // listens for signal on timer
-                create_send_status(s)
+                if err := create_send_status(s); err != nil {
+                    log.Print("iw4x-discord-bot: failed to send bot status: ", err)
+                }
             case _, _ = <-stale: // this allows the thread to be killed by the new thread
                 return
             }
