@@ -191,6 +191,7 @@ func main() {
 
                 query_results, err := query_db(location, opts[2:]) // pass in only opts *after* '!iw4x querydb' as those are useless here.
                 if err != nil {
+                    s.ChannelMessageSend(m.ChannelID, err.Error())
                     log.Print("iw4x-discord-bot: failed to query database: ", err)
                     return
                 }

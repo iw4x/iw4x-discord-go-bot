@@ -233,8 +233,9 @@ func query_db(location string, opts []string) ([]string, error) {
     var d_value bool
     var e_value bool
     var t_value bool
-    
+
     flags := flag.NewFlagSet("querydb", flag.ContinueOnError)
+    flags.SetOutput(io.Discard) // don't print usage information to the serverside log
 
     flags.StringVar(&m_value, "m", "", "Message ID")
     flags.StringVar(&c_value, "c", "", "Channel ID")
@@ -249,7 +250,7 @@ func query_db(location string, opts []string) ([]string, error) {
     if err := flags.Parse(opts[:]); err != nil {
         return nil, err
     }
-    
+
     file, err := os.Open(filepath.Join(location, "chatlog.json"))
     if err != nil {
         return nil, err
@@ -272,7 +273,6 @@ func query_db(location string, opts []string) ([]string, error) {
 
         if err := json.Unmarshal([]byte(line), &db); err != nil {
             log.Print("iw4x-discord-bot: failed to parse database entry: ", err)
-            log.Print(line)
             continue
         }
 
