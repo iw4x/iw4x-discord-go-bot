@@ -33,23 +33,26 @@ func main() {
 	
     token := os.Getenv("IW4X_DISCORD_BOT_TOKEN") // the environment variable IW4X_DISCORD_BOT_TOKEN should hold the bot token
 
-	// message logging stuff, this can be kept open so not inside of the handler
-	location := os.Getenv("PWD") // get the directory the bot is being run from, we can just log to a file right next to the bin
+    // message logging stuff, this can be kept open so not inside of the handler
+    location, err := os.Getwd() // get the directory the bot is being run from, we can just log to a file right next to the bin
+    if err != nil {
+        log.Print("iw4x-discord-bot: failed to get current working directory: ", err)
+    }
 	
-	f, err := os.OpenFile(filepath.Join(location, "chatlog.json"), os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644) // the file to log to
-	if err != nil {
-		log.Fatal("iw4x-discord-bot: could not open logfile ", err)
-	}
-	defer f.Close()
+    f, err := os.OpenFile(filepath.Join(location, "chatlog.json"), os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644) // the file to log to
+    if err != nil {
+        log.Fatal("iw4x-discord-bot: could not open logfile: ", err)
+    }
+    defer f.Close()
 
 	// create our message logger, we want normal logs for everything but chat messages
-	message_logger := slog.New(slog.NewJSONHandler(f, nil)) // f here is the file we opened above for logging
+    message_logger := slog.New(slog.NewJSONHandler(f, nil)) // f here is the file we opened above for logging
 
-	// create directory for log archive if it doesn't exist already
-	log_archive_dir := filepath.Join(location, "archive")
-	if err := os.MkdirAll(log_archive_dir, 0755); err != nil {
-		log.Fatal("iw4x-discord-bot: failed to create log archive directory: ", err)
-	}
+    // create directory for log archive if it doesn't exist already
+    log_archive_dir := filepath.Join(location, "archive")
+    if err := os.MkdirAll(log_archive_dir, 0755); err != nil {
+        log.Fatal("iw4x-discord-bot: failed to create log archive directory: ", err)
+    }
 
     // on first startup / restart we need to check how large the message database is
     message_count, err := get_logfile_length(location)
