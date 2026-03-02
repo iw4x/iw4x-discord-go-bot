@@ -23,6 +23,20 @@ This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the mome
 - `!iw4x game` - Information on supported copies of MW2
 - `!iw4x dlc` - Information on MW2 and IW4x DLC
 
+# Current valid staff command list:
+
+- `!iw4x staffhelp` - Displays this help dialog
+- `!iw4x restart` - Sends the bot a signal to restart itself (service manager dependent)
+- `!iw4x querydb -m <messageid> -c <channelid> -a <authorid> -u <authorusername> -n <authornickname> -d -e -t` - Query the message log database
+    - This does not require all options, but requires at least one. In the case of `-d`, `-e`, and `-t`, this will filter the output to deleted, edited, and messages with attachments only, respectively.
+- `!iw4x logstat` - Displays statistics about the active message log
+
+# logreader.sh
+
+This is a [shellcheck](https://www.shellcheck.net/) and POSIX compliant shell script intended for reading logs server-side, should the Discord querying system not be appropriate for the query for one reason or another. This is just contained in the source tree, and not shipped alongside binary releases of the bot.
+
+The only dependency external to what is provided by coreutils implementations such as GNU and Busybox is `jq`.
+
 # Building
 
 System dependencies: `go`, (see go.mod for versioning info), though this should build fine on older versions (within reason) assuming the minimum requirement for the discordgo version defined in go.mod is met. 
