@@ -310,7 +310,8 @@ func command_staffhelp() (string, string) {
     "- `!iw4x restart` - Sends the bot a signal to restart itself",
     "- `!iw4x querydb -m <messageid> -c <channelid> -a <authorid> -u <authorusername> -n <authornickname> -d -e -t` - Query the message log database",
     "    - This does not require all options, but requires at least one. In the case of `-d`, `-e`, and `-t`, this will filter the output to deleted, edited, and messages with attachments only, respectively.",
-    "- `!iw4x logstat` - Displays statistics about the message log"}
+    "- `!iw4x logstat` - Displays statistics about the message log",
+    "- `!iw4x uptime` - Displays bot uptime"}
 
     body := strings.Join(output[:], "\n")
 

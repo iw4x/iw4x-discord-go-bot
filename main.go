@@ -31,6 +31,8 @@ const cycle_logcount int = 15000
 func main() {
     log.Print("iw4x-discord-bot: startup")
 
+    uptime := time.Now()
+
     token := os.Getenv("IW4X_DISCORD_BOT_TOKEN") // the environment variable IW4X_DISCORD_BOT_TOKEN should hold the bot token
     if token == "" {
         log.Print("iw4x-discord-bot: failed to acquire bot token, cannot continue")
@@ -246,6 +248,23 @@ func main() {
                 
                 command_duration := time.Since(command_timer)
                 log.Print("iw4x-discord-bot: response to command: 'logstat' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
+
+                return
+
+            case "uptime":
+                command_timer := time.Now()
+                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested uptime")
+
+                output_uptime := time.Since(uptime)
+
+                _, err := s.ChannelMessageSend(m.ChannelID, "Awake for " + output_uptime.String())
+                if err != nil {
+                    log.Print("iw4x-discord-bot: failed to send command response: ", err)
+                    return
+                }
+
+                command_duration := time.Since(command_timer)
+                log.Print("iw4x-discord-bot: response to command: 'uptime' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
 
                 return
             }
