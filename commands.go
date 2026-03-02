@@ -75,10 +75,7 @@ func command_docs() (string, string) {
 func command_discord() (string, string) {
     header := "Discord server invite"
 
-    var output = []string{"- https://discord.com/invite/pV2qJscTXf",
-    "- https://" + base_url + "discord"}
-
-    body := strings.Join(output[:], "\n")
+    body := "https://discord.com/invite/pV2qJscTXf"
 
     return header, body
 }
@@ -159,9 +156,7 @@ func command_unlockstats() (string, string) {
     "",
     "If you wish, you may use the console command `unlockstats` to perform the same action.",
     "",
-    "Do check out `!iw4x console` or the [console guide](https://" + base_url + "guides/console/) for more information on using the in-game console.",
-    "",
-    "https://" + base_url + "guides/unlockstats/"}
+    "Do check out `!iw4x console` for more information on using the in-game console."}
 
     body := strings.Join(output[:], "\n")
 
@@ -188,7 +183,7 @@ func command_fps() (string, string) {
     "    - If you would like to entirely remove the FPS limit, set `<value>` to `0`.",
     "    - It isn't recommended to exceed a limit of 333fps, as the game engine will behave erratically the higher your FPS gets.",
     "",
-    "Do check out `!iw4x console` or the [console guide](https://" + base_url + "guides/console/) for more information on using the in-game console."}
+    "Do check out `!iw4x console` for more information on using the in-game console."}
 
     body := strings.Join(output[:], "\n")
 
@@ -200,7 +195,7 @@ func command_fov() (string, string) {
 
     var output = []string{"You can change your FOV using the console command `cg_fov <value>`, where `<value>` is your chosen FOV. The default setting is `65`.",
     "",
-    "Do check out `!iw4x console` or the [console guide](https://" + base_url + "guides/console/) for more information on using the in-game console."}
+    "Do check out `!iw4x console` for more information on using the in-game console."}
 
     body := strings.Join(output[:], "\n")
 
@@ -217,9 +212,7 @@ func command_nickname() (string, string) {
     "",
     "If you wish, you may use the console command `name <mynewname>`, where `<mynewname>` is your chosen name.",
     "",
-    "Do check out `!iw4x console` or the [console guide](https://" + base_url + "guides/console/) for more information on using the in-game console.",
-    "",
-    "https://" + base_url + "guides/namechange/"}
+    "Do check out `!iw4x console` for more information on using the in-game console."}
 
     body := strings.Join(output[:], "\n")
 
@@ -234,9 +227,7 @@ func command_console() (string, string) {
     "- The **grave accent:** `",
     "- Or the **caret:** ^ key.",
     "",
-    "Regardless, the key should be located immediately under the **esc** key.",
-    "",
-    "For more details and console commands, do see the [console guide](https://" + base_url + "guides/console/)."}
+    "Regardless, the key should be located immediately under the **esc** key."}
 
     body := strings.Join(output[:], "\n")
 
