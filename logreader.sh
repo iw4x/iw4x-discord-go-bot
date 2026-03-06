@@ -23,18 +23,24 @@ die() {
 help() {
     printf "%b\n\n" "${BOLD}Usage:${CLEAR}
 
-./logreader.sh -a <author_id> -c <channel_id> -m <message_id> -e -d
+./logreader.sh -m <message_id> -c <channel_id> ... -e -d -t
 
 ${BOLD}Options:${CLEAR}
-    -a  Specify the author ID to query the log for
+    -m  Specify the message ID to query the log for
 
     -c  Specify the channel ID to query the log for
 
-    -m  Specify the message ID to query the log for
+    -a  Specify the author ID to query the log for
 
-    -e  Search for only edited messages
+    -u  Specify the author username to query the log for
 
-    -d  Search for only deleted messages"
+    -n  Specify the author nickname to query the log for
+
+    -d  Search for only deleted messages (does not take a value)
+
+    -e  Search for only edited messages (does not take a value)
+
+    -t  Search for only attachments (does not take a value)"
 
     exit
 }
@@ -42,13 +48,16 @@ ${BOLD}Options:${CLEAR}
 case "$1" in
     help|--h|-h|'') help ;;
     *)
-        while getopts "a:c:m:ed" opts ; do
+        while getopts "m:c:a:u:n:det" opts ; do
             case "${opts}" in
-                a) author_id="$OPTARG";;
-                c) channel_id="$OPTARG" ;;
                 m) message_id="$OPTARG" ;;
-                e) edited=true ;;
+                c) channel_id="$OPTARG" ;;
+                a) author_id="$OPTARG";;
+                u) author_username="$OPTARG" ;;
+                n) author_nickname="$OPTARG" ;;
                 d) deleted=true ;;
+                e) edited=true ;;
+                t) attachment=true ;;
                 *) help ;;
             esac
         done
@@ -58,19 +67,28 @@ esac
 # this is going to have to be slightly messy given the amount of ways this can be invoked, my apologies
 query='.'
 
-[ -n "$author_id" ] &&
-    query="$query | select(.author_ID == \"$author_id\")"
+[ -n "$message_id" ] &&
+    query="$query | select(.message_ID == \"$message_id\")"
 
 [ -n "$channel_id" ] &&
     query="$query | select(.channel_ID == \"$channel_id\")"
 
-[ -n "$message_id" ] &&
-    query="$query | select(.message_ID == \"$message_id\")"
+[ -n "$author_id" ] &&
+    query="$query | select(.author_ID == \"$author_id\")"
+
+[ -n "$author_username" ] &&
+    query="$query | select(.author_username == \"$author_username\")"
+
+[ -n "$author_nickname" ] &&
+    query="$query | select(.author_nickname == \"$author_nickname\")"
+
+[ -n "$deleted" ] &&
+    query="$query | select(.type == \"deletion\")"
 
 [ -n "$edited" ] &&
     query="$query | select(.type == \"edit\")"
 
-[ -n "$deleted" ] &&
-    query="$query | select(.type == \"deletion\")"
+[ -n "$attachment" ] &&
+    query="$query | .[] | select(.attachments | length > 0)"
 
 jq "$query" "$logfile" || die "Query invalid."
