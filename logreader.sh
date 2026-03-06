@@ -3,7 +3,7 @@
 # if it appears to be written moderately strangely
 
 # modify as needed
-logfile="${PWD}/iw4xchat.log"
+logfile="${PWD}/chatlog.json"
 
 # probably don't modify
 RED='\033[0;31m'
@@ -65,7 +65,7 @@ case "$1" in
 esac
 
 # this is going to have to be slightly messy given the amount of ways this can be invoked, my apologies
-query='.'
+query='.[]'
 
 [ -n "$message_id" ] &&
     query="$query | select(.message_ID == \"$message_id\")"
@@ -89,6 +89,6 @@ query='.'
     query="$query | select(.type == \"edit\")"
 
 [ -n "$attachment" ] &&
-    query="$query | .[] | select(.attachments | length > 0)"
+    query="$query | select(.attachments | length > 0)"
 
 jq "$query" "$logfile" || die "Query invalid."
