@@ -1,6 +1,6 @@
 module iw4x-discord-bot
 
-go 1.25.7
+go 1.26.1
 
 require github.com/bwmarrin/discordgo v0.29.0
 
