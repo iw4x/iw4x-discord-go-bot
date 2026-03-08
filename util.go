@@ -106,6 +106,37 @@ func create_send_query(s *discordgo.Session, m *discordgo.MessageCreate) (error)
     return nil
 }
 
+func fetch_sale() (string, error) {
+    type steam_sale map[string]struct {
+        data struct {
+            price_overview struct {
+                discount_percent int `json:"discount_percent"`
+            } `json:"price_overview"`
+        } `json:"data"`
+    }
+
+    r, err := http.Get("https://store.steampowered.com/api/appdetails?appids=10180&filters=price_overview")
+    if err != nil {
+        return "0", err
+    }
+    defer r.Body.Close()
+
+    body, err := ioutil.ReadAll(r.Body)
+    if err != nil {
+        return "0", err
+    }
+
+    var result steam_sale
+    if err := json.Unmarshal(body, &result); err != nil {
+        return "0", err
+    }
+
+    sale_percentage := result["10180"].data.price_overview.discount_percent
+    sale_output := strconv.Itoa(sale_percentage)
+
+    return sale_output, nil
+}
+
 // gets and returns amount of active players
 func fetch_players() (string, error) {
     type Server struct {

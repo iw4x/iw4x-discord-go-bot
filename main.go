@@ -328,11 +328,11 @@ func main() {
 
     // since the above is set to trigger on message send,
     // this is set to trigger on Ready to set bot status
-    var stale chan bool // this is nil on first run
+    var stale_status chan bool // this is nil on first run
     // when discord sends a new ready, the new thread will signal the old one to stop
     session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-        if stale != nil { close(stale) } // send signal if non nil
-        stale = make(chan bool) // this sets it non nil
+        if stale_status != nil { close(stale_status) } // send signal if non nil
+        stale_status = make(chan bool) // this sets it non nil
 
         // we'll fetch players immediately on ready, and then once every 1.5 minutes
         // after this seems to fail occasionally, just rerun until it doesn't, but
@@ -356,7 +356,38 @@ func main() {
                 if err := create_send_status(s); err != nil {
                     log.Print("iw4x-discord-bot: failed to send bot status: ", err)
                 }
-            case _, _ = <-stale: // this allows the thread to be killed by the new thread
+            case _, _ = <-stale_status: // this allows the thread to be killed by the new thread
+                return
+            }
+        }
+    })
+
+    // this is pretty much the same thing as above but for steam sales instead
+    var stale_sale chan bool
+    session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+        if stale_sale != nil { close(stale_sale) }
+        stale_sale = make(chan bool)
+
+        sale_ticker := time.NewTicker(12 * time.Hour)
+        for {
+            select {
+            case <-sale_ticker.C:
+                sale_percentage, err := fetch_sale()
+                if err != nil {
+                    log.Print("iw4x-discord-bot: failed to check for steam sale: ", err)
+                }
+
+                if sale_percentage != "0" {
+                    // convert percentage int to string for output
+                    output := "Call Of Duty: Modern Warfare 2 is on sale on [Steam](https://store.steampowered.com/app/10180/Call_of_Duty_Modern_Warfare_2_2009/) for " + sale_percentage + "% off!"
+
+                    _, err := s.ChannelMessageSend("1479998471812546662", output)
+                    if err != nil {
+                        log.Print("iw4x-discord-bot: failed to send steam sale notification: ", err)
+                    }
+                }
+
+            case _, _ = <-stale_sale:
                 return
             }
         }
