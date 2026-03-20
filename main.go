@@ -405,6 +405,16 @@ func main() {
         }
     })
 
+    session.AddHandler(func(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
+        // ping new users on join to tell them about bot commands
+        joiner_id := m.User.ID
+        if err := send_join_message(s, joiner_id); err != nil {
+            log.Print("iw4x-discord-bot: failed to send join message: ", err)
+        }
+
+        return
+    })
+
 	// log message deletion
 	session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDelete) {
         message_logger.Info(
@@ -434,7 +444,7 @@ func main() {
     })
 	
     // tell discord our intent
-    session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
+    session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers
 
     // open discord session
     if err = session.Open(); err != nil {

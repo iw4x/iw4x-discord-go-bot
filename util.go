@@ -18,6 +18,7 @@ import (
     "compress/gzip"
     "path/filepath"
     "flag"
+    "strings"
 )
 
 // builds embeds and sends output for all commands
@@ -345,4 +346,43 @@ func query_db(location string, opts []string) ([]string, error) {
     }
 
     return matching_db_entries, nil
+}
+
+func send_join_message(s *discordgo.Session, joiner_id string) (error) {
+    var output = []string{
+        "Welcome to the IW4x server, <@"+joiner_id+">!",
+        "",
+        "To help you get up and running quickly, please check out our quick links and mini-FAQ below.",
+        "",
+        "### :warning: Important: No Piracy Supported",
+        "Please note that **we do not support piracy under any circumstances**. You must own at least the base game on Steam to play IW4x and to receive support in this server.",
+        "",
+        "### Quick Links & Mini-FAQ",
+        "* **How do I install IW4x?**",
+        "    Check out our Quickstart guide to get everything installed and ready to go: [get-started/quickstart](<https://docs.iw4x.io/get-started/quickstart/>)",
+        "* **How do I play a private match with friends?**",
+        "    To play privately with your friends, you will need to set up a private server: [hosting/server-hosting](<https://docs.iw4x.io/hosting/server-hosting/>)",
+        "* **How do I add bots to my game?**",
+        "    You can play with bots using the Bot Warfare mod: [guides/bot-warfare](<https://docs.iw4x.io/guides/bot-warfare/>)",
+        "* **How do I change the game language?**",
+        "    Follow these steps to change your localization settings: [guides/change-language](<https://docs.iw4x.io/guides/change-language/>)",
+        "* **How can I improve my game's performance?**",
+        "    Experiencing stuttering or low FPS? Check out our optimization tips: [guides/performance](<https://docs.iw4x.io/guides/performance/>)",
+        "",
+        "### Still need help?",
+        "* Type `!iw4x help` for a list of helpful bot commands.",
+        "* If your question isn't answered above, feel free to ask in <#1111982470045368361>.",
+        "* If you are reporting a bug or have a more complex issue, please create a thread in <#1420088697960796170>.",
+        "",
+        "*Please be patient, avoid cross-posting in multiple channels, and someone will help you out as soon as they can!*",
+    }
+
+    welcome_message := strings.Join(output[:], "\n")
+
+    _, err := s.ChannelMessageSend("1114942926926127154", welcome_message)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
