@@ -363,12 +363,13 @@ func main() {
     })
 
     // this is pretty much the same thing as above but for steam sales instead
+    var is_currently_on_sale bool = false // track current sale
     var stale_sale chan bool
     session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
         if stale_sale != nil { close(stale_sale) }
         stale_sale = make(chan bool)
 
-        sale_ticker := time.NewTicker(12 * time.Hour)
+        sale_ticker := time.NewTicker(1 * time.Hour)
         for {
             select {
             case <-sale_ticker.C:
@@ -378,13 +379,18 @@ func main() {
                 }
 
                 if sale_percentage != "0" {
-                    // convert percentage int to string for output
-                    output := "Call Of Duty: Modern Warfare 2 is on sale on [Steam](https://store.steampowered.com/app/10180/Call_of_Duty_Modern_Warfare_2_2009/) for " + sale_percentage + "% off!"
+                    if !is_currently_on_sale {
+                        // convert percentage int to string for output
+                        output := "Call Of Duty: Modern Warfare 2 is on sale on [Steam](https://store.steampowered.com/app/10180/Call_of_Duty_Modern_Warfare_2_2009/) for " + sale_percentage + "% off!"
 
-                    _, err := s.ChannelMessageSend("1479998471812546662", output)
-                    if err != nil {
-                        log.Print("iw4x-discord-bot: failed to send steam sale notification: ", err)
+                        _, err := s.ChannelMessageSend("1479998471812546662", output)
+                        if err != nil {
+                            log.Print("iw4x-discord-bot: failed to send steam sale notification: ", err)
+                        }
+                        is_currently_on_sale = true
                     }
+                } else {
+                    is_currently_on_sale = false
                 }
 
             case _, _ = <-stale_sale:

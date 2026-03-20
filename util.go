@@ -12,7 +12,6 @@ import (
     "bufio"
     "net/http"
     "encoding/json"
-    "io/ioutil"
     "log"
     "strconv"
     "slices"
@@ -108,9 +107,9 @@ func create_send_query(s *discordgo.Session, m *discordgo.MessageCreate) (error)
 
 func fetch_sale() (string, error) {
     type steam_sale map[string]struct {
-        data struct {
-            price_overview struct {
-                discount_percent int `json:"discount_percent"`
+        Data struct {
+            PriceOverview struct {
+                DiscountPercent int `json:"discount_percent"`
             } `json:"price_overview"`
         } `json:"data"`
     }
@@ -121,7 +120,7 @@ func fetch_sale() (string, error) {
     }
     defer r.Body.Close()
 
-    body, err := ioutil.ReadAll(r.Body)
+    body, err := io.ReadAll(r.Body)
     if err != nil {
         return "0", err
     }
@@ -131,7 +130,7 @@ func fetch_sale() (string, error) {
         return "0", err
     }
 
-    sale_percentage := result["10180"].data.price_overview.discount_percent
+    sale_percentage := result["10180"].Data.PriceOverview.DiscountPercent
     sale_output := strconv.Itoa(sale_percentage)
 
     return sale_output, nil
@@ -153,7 +152,7 @@ func fetch_players() (string, error) {
     }
     defer r.Body.Close()
 
-    body, err := ioutil.ReadAll(r.Body)
+    body, err := io.ReadAll(r.Body)
     if err != nil {
         return "0", err
     }
