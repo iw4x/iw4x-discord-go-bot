@@ -390,6 +390,12 @@ func main() {
                         is_currently_on_sale = true
                     }
                 } else {
+                    if is_currently_on_sale {
+                        _, err := s.ChannelMessageSend("1479998471812546662", "The previously announced sale has ended.")
+                        if err != nil {
+                            log.Print("iw4x-discord-bot: failed to send steam sale notification: ", err)
+                        }
+                    }
                     is_currently_on_sale = false
                 }
 
