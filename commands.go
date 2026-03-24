@@ -118,10 +118,12 @@ func command_repair() (string, string) {
 }
 
 func command_dedicated() (string, string) {
-    header := "Setting up a dedicated server"
+    header := "Setting up a dedicated server / Playing with friends"
 
-    var output = []string{"There are detailed instructions at:",
-    "- https://docs." + base_url + "hosting/server-hosting/"}
+    var output = []string{"There are detailed instructions on hosting and server setup at:",
+    "- https://docs." + base_url + "hosting/server-hosting/",
+    "",
+    "Note that to play privately with your friends, you will need to set up your own local server."}
 
     body := strings.Join(output[:], "\n")
 
@@ -323,7 +325,7 @@ func command_logstat(message_count int, location string) (string, string) {
 
     // convert to string for reply
     count_output := strconv.Itoa(message_count)
-    
+
     logfile_stat, err := os.Stat(filepath.Join(location, "chatlog.json"))
     if err != nil {
         log.Print("iw4x-discord-bot: failed to stat active logfile: ", err)
@@ -331,8 +333,8 @@ func command_logstat(message_count int, location string) (string, string) {
     }
     logfile_size := logfile_stat.Size()
     logfile_size_kilobytes := float64(logfile_size) / 1024
-    logfile_size_output := strconv.FormatFloat(logfile_size_kilobytes, 'f', 2, 64) 
-    
+    logfile_size_output := strconv.FormatFloat(logfile_size_kilobytes, 'f', 2, 64)
+
     var output = []string{"Active entries: "+ count_output,
     "Size of active logfile: " + logfile_size_output + "KB"}
 
