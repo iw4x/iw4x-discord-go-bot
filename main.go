@@ -114,7 +114,7 @@ func main() {
             "type", "message",
             "content", m.Content,
             "message_ID", m.ID,
-            "channel_ID", m.ChannelID,	
+            "channel_ID", m.ChannelID,
             "author_ID", m.Author.ID,
             "author_username", m.Author.Username,
             "author_nickname", m.Author.GlobalName,
@@ -153,21 +153,21 @@ func main() {
             log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
             return
         }
-        
+
         // staff-only commands
         if check_permissions(m) {
             switch staff_command := opts[1]; staff_command {
             case "restart":
                 command_timer := time.Now()
                 log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> triggered restart")
-                
+
                 s.ChannelMessageSend(m.ChannelID, "gn")
                 log.Print("iw4x-discord-bot: closing session")
                 session.Close()
-                
+
                 command_duration := time.Since(command_timer)
                 log.Print("iw4x-discord-bot: session closed after: ", command_duration, ", goodnight!")
-                
+
                 os.Exit(0)
             case "staffhelp":
                 command_timer := time.Now()
@@ -179,7 +179,7 @@ func main() {
                     log.Print("iw4x-discord-bot: failed to send command response: ", err)
                     return
                 }
-                
+
                 command_duration := time.Since(command_timer)
                 log.Print("iw4x-discord-bot: response to command: 'staffhelp' from staff member: <" + m.Author.ID + ":" + "m.Author.Username" + "> sent in: <", command_duration, ">")
                 return
@@ -194,7 +194,7 @@ func main() {
                     }
                     return
                 }
-                
+
                 command_timer := time.Now()
                 log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested querydb")
 
@@ -217,13 +217,13 @@ func main() {
                 if err != nil {
                     log.Print("iw4x-discord-bot: failed to make query results pretty: ", err)
                 }
-                
+
                 // write query results to file
-                if err := os.WriteFile("/tmp/queryresults.json", pretty_query_results, 0644); err != nil { 
+                if err := os.WriteFile("/tmp/queryresults.json", pretty_query_results, 0644); err != nil {
                     log.Print("iw4x-discord-bot: failed to write query results to temporary file: ", err)
                     return
                 }
-                
+
                 // upload file to discord
                 if err := create_send_query(s, m); err != nil {
                     log.Print("iw4x-discord-bot: failed to upload query results to discord: ", err)
@@ -234,7 +234,7 @@ func main() {
                 log.Print("iw4x-discord-bot: response to command: 'querydb' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
 
                 return
-                
+
             case "logstat":
                 command_timer := time.Now()
                 log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested logstat")
@@ -245,7 +245,7 @@ func main() {
                     log.Print("iw4x-discord-bot: failed to send command response: ", err)
                     return
                 }
-                
+
                 command_duration := time.Since(command_timer)
                 log.Print("iw4x-discord-bot: response to command: 'logstat' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
 
@@ -279,7 +279,7 @@ func main() {
             log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
             return
         }
-        
+
         // function map, maps key (user input command) to value pair (function name)
         // every function in this map will return (string, string) - header, body
         // this could probably be a map of structs with predefined header/body values instead
@@ -442,7 +442,7 @@ func main() {
 
         return
     })
-	
+
     // tell discord our intent
     session.Identify.Intents = discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers
 
