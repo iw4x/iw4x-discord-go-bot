@@ -205,7 +205,10 @@ func main() {
         if len(opts) > 2 { // if too many opts are given, return
             header := "Too many arguments!"
             body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
-            create_send_response(header, body, s, m)
+            if err := create_send_response(header, body, s, m); err != nil {
+                log.Print("iw4x-discord-bot: failed to send command response: ", err)
+                return
+            }
             log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
             return
         }
@@ -242,7 +245,10 @@ func main() {
             command_timer := time.Now() // starts a timer
             log.Print("iw4x-discord-bot: command: '" + opts[1] + "' requested by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
             header, body := command() // calls `command` as a function, of which will be one of the matching key values
-            create_send_response(header, body, s, m)
+            if err := create_send_response(header, body, s, m); err != nil {
+                log.Print("iw4x-discord-bot: failed to send command response: ", err)
+                return
+            }
             command_duration := time.Since(command_timer)
             log.Print("iw4x-discord-bot: response to command: '" + opts[1] + "' from user: <" + m.Author.ID +  ":" + m.Author.Username + "> sent in: <",  command_duration,  ">")
             return
@@ -250,7 +256,10 @@ func main() {
             log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
             header := "Invalid option!"
             body := "Invalid bot command: `" + opts[1] + "`\nSee `!iw4x help` for more information on valid commands."
-            create_send_response(header, body, s, m)
+            if err := create_send_response(header, body, s, m); err != nil {
+                log.Print("iw4x-discord-bot: failed to send command response: ", err)
+                return
+            }
             return
         }
 
