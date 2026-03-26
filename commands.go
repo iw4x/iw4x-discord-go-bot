@@ -121,10 +121,12 @@ func command_repair() (string, string) {
 }
 
 func command_dedicated() (string, string) {
-    header := "Setting up a dedicated server"
+    header := "Setting up a dedicated server / Playing with friends"
 
-    var output = []string{"There are detailed instructions at:",
-    "- https://docs." + base_url + "hosting/server-hosting/"}
+    var output = []string{"There are detailed instructions on hosting and server setup at:",
+    "- https://docs." + base_url + "hosting/server-hosting/",
+    "",
+    "Note that to play privately with your friends, you will need to set up your own local server."}
 
     body := strings.Join(output[:], "\n")
 
