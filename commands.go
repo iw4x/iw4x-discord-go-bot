@@ -1,11 +1,14 @@
 package main
 
 import (
+    "github.com/bwmarrin/discordgo"
+
     "strings"
     "strconv"
     "os"
     "log"
     "path/filepath"
+    "encoding/json"
 )
 
 // all of the functions here need to return a title and body of type string
@@ -118,12 +121,10 @@ func command_repair() (string, string) {
 }
 
 func command_dedicated() (string, string) {
-    header := "Setting up a dedicated server / Playing with friends"
+    header := "Setting up a dedicated server"
 
-    var output = []string{"There are detailed instructions on hosting and server setup at:",
-    "- https://docs." + base_url + "hosting/server-hosting/",
-    "",
-    "Note that to play privately with your friends, you will need to set up your own local server."}
+    var output = []string{"There are detailed instructions at:",
+    "- https://docs." + base_url + "hosting/server-hosting/"}
 
     body := strings.Join(output[:], "\n")
 
@@ -341,4 +342,37 @@ func command_logstat(message_count int, location string) (string, string) {
     body := strings.Join(output[:], "\n")
 
     return header, body
+}
+
+func command_querydb(opts []string, location string, s *discordgo.Session, m *discordgo.MessageCreate) (error) {
+    query_results, err := query_db(location, opts[:])
+    if err != nil {
+        s.ChannelMessageSend(m.ChannelID, err.Error())
+        return err
+    }
+
+    // make results pretty for staff readability
+    // convert []string to []json.RawMessage
+    raw_objects := make([]json.RawMessage, len(query_results))
+    for i, str := range query_results {
+        raw_objects[i] = json.RawMessage(str)
+    }
+
+    // we can now use MarshalIndent to "blow out" the structure of the message
+    pretty_query_results, err := json.MarshalIndent(raw_objects, "", "  ")
+    if err != nil {
+        return err
+    }
+
+    // write query results to file
+    if err := os.WriteFile("/tmp/queryresults.json", pretty_query_results, 0644); err != nil {
+        return err
+    }
+
+    // upload file to discord
+    if err := create_send_query(s, m); err != nil {
+        return err
+    }
+
+    return nil
 }

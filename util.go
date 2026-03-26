@@ -386,3 +386,20 @@ func send_join_message(s *discordgo.Session, joiner_id string) (error) {
 
     return nil
 }
+
+func is_staff_command(opt string) (bool) {
+    switch staff_command := opt; staff_command {
+    case "restart":
+        return true
+    case "staffhelp":
+        return true
+    case "querydb":
+        return true
+    case "logstat":
+        return true
+    case "uptime":
+        return true
+    }
+
+    return false
+}

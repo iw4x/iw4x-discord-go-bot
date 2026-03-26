@@ -11,7 +11,6 @@ import (
     "syscall"
     "strings"
     "time"
-    "encoding/json"
 )
 
 // the iw4x domain is contained in a variable here to make it easier
@@ -156,116 +155,47 @@ func main() {
 
         // staff-only commands
         if check_permissions(m) {
-            switch staff_command := opts[1]; staff_command {
-            case "restart":
+            if is_staff_command(opts[1]) {
+                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested command: '" + opts[1] + "'")
                 command_timer := time.Now()
-                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> triggered restart")
+                var err error
 
-                s.ChannelMessageSend(m.ChannelID, "gn")
-                log.Print("iw4x-discord-bot: closing session")
-                session.Close()
+                switch staff_command := opts[1]; staff_command {
+                case "restart":
+                    log.Print("iw4x-discord-bot: triggering restart...")
+                    s.ChannelMessageSend(m.ChannelID, "gn")
+                    session.Close()
+                    os.Exit(0)
 
-                command_duration := time.Since(command_timer)
-                log.Print("iw4x-discord-bot: session closed after: ", command_duration, ", goodnight!")
+                case "staffhelp":
+                    header, body := command_staffhelp()
+                    err = create_send_response(header, body, s, m)
 
-                os.Exit(0)
-            case "staffhelp":
-                command_timer := time.Now()
-                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested staffhelp")
-
-                header, body := command_staffhelp()
-
-                if err := create_send_response(header, body, s, m); err != nil {
-                    log.Print("iw4x-discord-bot: failed to send command response: ", err)
-                    return
-                }
-
-                command_duration := time.Since(command_timer)
-                log.Print("iw4x-discord-bot: response to command: 'staffhelp' from staff member: <" + m.Author.ID + ":" + "m.Author.Username" + "> sent in: <", command_duration, ">")
-                return
-
-            case "querydb":
-                if len(opts) < 3 {
-                    header := "Not enough arguments!"
-                    body := "Expected `!iw4x querydb <opts>`.\nSee `!iw4x staffhelp` for more information on valid commands."
-
-                    if err := create_send_response(header, body, s, m); err != nil {
-                        log.Print("iw4x-discord-bot: failed to send command response: ", err)
+                case "querydb":
+                    if len(opts) < 3 {
+                        header := "Not enough arguments!"
+                        body := "Expected `!iw4x querydb <opts>`.\nSee `!iw4x staffhelp` for more information on valid commands."
+                        err = create_send_response(header, body, s, m)
+                        return
                     }
-                    return
+                    err = command_querydb(opts[2:], location, s, m)
+
+                case "logstat":
+                    header, body := command_logstat(message_count, location)
+                    err = create_send_response(header, body, s, m)
+
+                case "uptime":
+                    output_uptime := time.Since(uptime)
+                    _, err = s.ChannelMessageSend(m.ChannelID, "awake for " + output_uptime.String())
                 }
 
-                command_timer := time.Now()
-                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested querydb")
-
-                query_results, err := query_db(location, opts[2:]) // pass in only opts *after* '!iw4x querydb' as those are useless here.
                 if err != nil {
-                    s.ChannelMessageSend(m.ChannelID, err.Error())
-                    log.Print("iw4x-discord-bot: failed to query database: ", err)
-                    return
-                }
-
-                // make results pretty for staff readability
-                // convert []string to []json.RawMessage
-                raw_objects := make([]json.RawMessage, len(query_results))
-                for i, str := range query_results {
-                    raw_objects[i] = json.RawMessage(str)
-                }
-
-                // we can now use MarshalIndent to "blow out" the structure of the message
-                pretty_query_results, err := json.MarshalIndent(raw_objects, "", "  ")
-                if err != nil {
-                    log.Print("iw4x-discord-bot: failed to make query results pretty: ", err)
-                }
-
-                // write query results to file
-                if err := os.WriteFile("/tmp/queryresults.json", pretty_query_results, 0644); err != nil {
-                    log.Print("iw4x-discord-bot: failed to write query results to temporary file: ", err)
-                    return
-                }
-
-                // upload file to discord
-                if err := create_send_query(s, m); err != nil {
-                    log.Print("iw4x-discord-bot: failed to upload query results to discord: ", err)
+                    log.Print("iw4x-discord-bot: failed to send response to staff command: '" + opts[1] + "': ", err)
                     return
                 }
 
                 command_duration := time.Since(command_timer)
-                log.Print("iw4x-discord-bot: response to command: 'querydb' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
-
-                return
-
-            case "logstat":
-                command_timer := time.Now()
-                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested logstat")
-
-                header, body := command_logstat(message_count, location)
-
-                if err := create_send_response(header, body, s, m); err != nil {
-                    log.Print("iw4x-discord-bot: failed to send command response: ", err)
-                    return
-                }
-
-                command_duration := time.Since(command_timer)
-                log.Print("iw4x-discord-bot: response to command: 'logstat' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
-
-                return
-
-            case "uptime":
-                command_timer := time.Now()
-                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested uptime")
-
-                output_uptime := time.Since(uptime)
-
-                _, err := s.ChannelMessageSend(m.ChannelID, "Awake for " + output_uptime.String())
-                if err != nil {
-                    log.Print("iw4x-discord-bot: failed to send command response: ", err)
-                    return
-                }
-
-                command_duration := time.Since(command_timer)
-                log.Print("iw4x-discord-bot: response to command: 'uptime' from staff member: <" + m.Author.ID + ":" + m.Author.Username + "> sent in: <", command_duration, ">")
-
+                log.Print("iw4x-discord-bot: response to staff command: '" + opts[1] + "' sent in: <", command_duration, ">")
                 return
             }
         }
