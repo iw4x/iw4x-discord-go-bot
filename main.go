@@ -347,7 +347,6 @@ func main() {
     session.AddHandler(func(s *discordgo.Session, m *discordgo.GuildMemberAdd) {
         // ping new users on join to tell them about bot commands
         joiner_id := m.User.ID
-        time.Sleep(3 * time.Second) // the bot is pinging faster than discord actually shows the join message, make sure the ping hits once they see the server
         if err := send_join_message(s, joiner_id); err != nil {
             log.Print("iw4x-discord-bot: failed to send join message: ", err)
         }
