@@ -19,6 +19,7 @@ import (
     "path/filepath"
     "flag"
     "strings"
+    "fmt"
 )
 
 // builds embeds and sends output for all commands
@@ -43,7 +44,7 @@ func create_send_response(header string, body string, s *discordgo.Session, m *d
 func create_send_status(s *discordgo.Session) (error) {
     players, err := fetch_players()
     if err != nil {
-        return err
+        log.Print("iw4x-discord-bot: failed to fetch player count: ", err) // this doesn't return so the bot can apply its Currently sleeping.. status
     }
 
     if players != "0" {
@@ -152,6 +153,10 @@ func fetch_players() (string, error) {
     body, err := io.ReadAll(r.Body)
     if err != nil {
         return "0", err
+    }
+
+    if r.StatusCode != http.StatusOK {
+        return "0", fmt.Errorf("%s", r.Status)
     }
 
     if err := json.Unmarshal(body, &response); err != nil {
