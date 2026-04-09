@@ -139,15 +139,11 @@ func fetch_sale() (string, error) {
 
 // gets and returns amount of active players
 func fetch_players() (string, error) {
-    type Server struct {
-        Client int `json:"clients"` // each `servers` entry contains a `clients` variable, pull that
+    var response struct {
+        Players int `json:"players"`
     }
 
-    type Response struct {
-        Servers []Server `json:"servers"` // we're looking through entries in `servers`
-    }
-
-    r, err := http.Get("https://master." + base_url + "v1/servers/iw4x?protocol=152")
+    r, err := http.Get("https://master." + base_url + "v1/stats?protocol=152")
     if err != nil {
         return "0", err
     }
@@ -158,18 +154,11 @@ func fetch_players() (string, error) {
         return "0", err
     }
 
-    var response Response
-    json.Unmarshal(body, &response)
-
-    var result int = 0
-    for _, p := range response.Servers {
-        result += p.Client // for every entry, sum with current value of result
+    if err := json.Unmarshal(body, &response); err != nil {
+        return "0", err
     }
-
     // this needs to be a string when used for status, convert from int
-    result_output := strconv.Itoa(result)
-
-    return result_output, nil
+    return strconv.Itoa(response.Players), nil
 }
 
 // this is explicitly for staff only commands, and checks whether or not
