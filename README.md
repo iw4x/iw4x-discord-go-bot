@@ -22,6 +22,7 @@ This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the mome
 - `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles
 - `!iw4x game` - Information on supported copies of MW2
 - `!iw4x dlc` - Information on MW2 and IW4x DLC
+- `!iw4x stats` - Information on IW4x server statistics
 
 # Current valid staff command list:
 

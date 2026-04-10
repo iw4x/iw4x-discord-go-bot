@@ -36,6 +36,7 @@ func command_help() (string, string) {
     "- `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles",
     "- `!iw4x game` - Information on supported copies of MW2",
     "- `!iw4x dlc` - Information on MW2 and IW4x DLC",
+    "- `!iw4x stats` - Information on IW4x server statistics",
     "",
     "If you would like more information about IW4x, visit the official documentation at https://docs." + base_url}
 
@@ -300,6 +301,28 @@ func command_dlc() (string, string) {
     "- [Stimulus](https://store.steampowered.com/app/10195/Call_of_Duty_Modern_Warfare_2_Stimulus_Package/)",
     "",
     "In the case of IW4x DLCs, they will be installed by the launcher when you install IW4x."}
+
+    body := strings.Join(output[:], "\n")
+
+    return header, body
+}
+
+func command_stats() (string, string) {
+    header := "IW4x server network statistics"
+
+    current_players, err := fetch_master_stats("players")
+    bot_count, err := fetch_master_stats("bots")
+    server_count, err := fetch_master_stats("servers")
+    server_capacity, err := fetch_master_stats("capacity")
+
+    if err != nil {
+        return "", ""
+    }
+
+    var output = []string{"Current players: `"+current_players+"`",
+    "Bot count: `"+bot_count+"`",
+    "Server count: `"+server_count+"`",
+    "Max player capacity: `"+server_capacity+"`"}
 
     body := strings.Join(output[:], "\n")
 

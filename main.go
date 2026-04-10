@@ -236,6 +236,7 @@ func main() {
             "rawfiles": command_rawfiles,
             "game": command_game,
             "dlc": command_dlc,
+            "stats": command_stats,
         }
 
         // `command` here is the keys associated value if the key exists, in this case a function name

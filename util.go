@@ -42,7 +42,7 @@ func create_send_response(header string, body string, s *discordgo.Session, m *d
 
 // builds and sends output for player count in status
 func create_send_status(s *discordgo.Session) (error) {
-    players, err := fetch_players()
+    players, err := fetch_master_stats("players")
     if err != nil {
         log.Print("iw4x-discord-bot: failed to fetch player count: ", err) // this doesn't return so the bot can apply its Currently sleeping.. status
     }
@@ -138,10 +138,13 @@ func fetch_sale() (string, error) {
     return sale_output, nil
 }
 
-// gets and returns amount of active players
-func fetch_players() (string, error) {
+// this function can pull various information about iw4x from the master
+func fetch_master_stats(request string) (string, error) {
     var response struct {
         Players int `json:"players"`
+        Servers int `json:"servers"`
+        Bots int `json:"bots"`
+        Capacity int `json:"slots"`
     }
 
     r, err := http.Get("https://master." + base_url + "v1/stats?protocol=152")
@@ -162,8 +165,20 @@ func fetch_players() (string, error) {
     if err := json.Unmarshal(body, &response); err != nil {
         return "0", err
     }
-    // this needs to be a string when used for status, convert from int
-    return strconv.Itoa(response.Players), nil
+
+    // return a string
+    switch request {
+    case "players":
+        return strconv.Itoa(response.Players), nil
+    case "servers":
+        return strconv.Itoa(response.Servers), nil
+    case "bots":
+        return strconv.Itoa(response.Bots), nil
+    case "capacity":
+        return strconv.Itoa(response.Capacity), nil
+    }
+
+    return "0", fmt.Errorf("failed to return requested statistic")
 }
 
 // this is explicitly for staff only commands, and checks whether or not
