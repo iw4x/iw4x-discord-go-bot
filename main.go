@@ -280,6 +280,7 @@ func main() {
         for {
             if err := create_send_status(s); err != nil {
                 log.Print("iw4x-discord-bot: failed to send bot status: ", err)
+            } else {
                 break
             }
             time.Sleep(5 * time.Second)
