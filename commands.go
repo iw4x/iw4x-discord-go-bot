@@ -309,15 +309,15 @@ func command_dlc() (string, string) {
 
 func command_stats() (string, string) {
     header := "IW4x server network statistics"
-
-    current_players, err := fetch_master_stats("players")
-    bot_count, err := fetch_master_stats("bots")
-    server_count, err := fetch_master_stats("servers")
-    server_capacity, err := fetch_master_stats("capacity")
-
+    stats, err := fetch_master_stats()
     if err != nil {
         return "", ""
     }
+
+    current_players := strconv.Itoa(stats.Players)
+    bot_count := strconv.Itoa(stats.Bots)
+    server_count := strconv.Itoa(stats.Servers)
+    server_capacity := strconv.Itoa(stats.Capacity)
 
     var output = []string{"Current players: `"+current_players+"`",
     "Bot count: `"+bot_count+"`",

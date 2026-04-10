@@ -22,6 +22,14 @@ import (
     "fmt"
 )
 
+// the information the stats portion of the master server can return, at the top of the file for easy modifications
+type MasterStats struct {
+    Players  int `json:"players"`
+    Servers  int `json:"servers"`
+    Bots     int `json:"bots"`
+    Capacity int `json:"slots"`
+}
+
 // builds embeds and sends output for all commands
 // header and body are passed into this from the function map call below,
 // map call fetches this information from each commands function in commands.go
@@ -42,9 +50,14 @@ func create_send_response(header string, body string, s *discordgo.Session, m *d
 
 // builds and sends output for player count in status
 func create_send_status(s *discordgo.Session) (error) {
-    players, err := fetch_master_stats("players")
+    stats, err := fetch_master_stats()
+    var players string
     if err != nil {
-        log.Print("iw4x-discord-bot: failed to fetch player count: ", err) // this doesn't return so the bot can apply its Currently sleeping.. status
+        // this doesn't return so the bot can apply its "Currently sleeping.." status
+        log.Print("iw4x-discord-bot: failed to fetch player count: ", err)
+        players = "0"
+    } else {
+        players = strconv.Itoa(stats.Players)
     }
 
     if players != "0" {
@@ -139,46 +152,28 @@ func fetch_sale() (string, error) {
 }
 
 // this function can pull various information about iw4x from the master
-func fetch_master_stats(request string) (string, error) {
-    var response struct {
-        Players int `json:"players"`
-        Servers int `json:"servers"`
-        Bots int `json:"bots"`
-        Capacity int `json:"slots"`
-    }
-
+func fetch_master_stats() (MasterStats, error) {
+    var response MasterStats
     r, err := http.Get("https://master." + base_url + "v1/stats?protocol=152")
     if err != nil {
-        return "0", err
+        return MasterStats{}, err
     }
     defer r.Body.Close()
 
     body, err := io.ReadAll(r.Body)
     if err != nil {
-        return "0", err
+        return MasterStats{}, err
     }
 
     if r.StatusCode != http.StatusOK {
-        return "0", fmt.Errorf("%s", r.Status)
+        return MasterStats{}, fmt.Errorf("%s", r.Status)
     }
 
     if err := json.Unmarshal(body, &response); err != nil {
-        return "0", err
+        return MasterStats{}, err
     }
 
-    // return a string
-    switch request {
-    case "players":
-        return strconv.Itoa(response.Players), nil
-    case "servers":
-        return strconv.Itoa(response.Servers), nil
-    case "bots":
-        return strconv.Itoa(response.Bots), nil
-    case "capacity":
-        return strconv.Itoa(response.Capacity), nil
-    }
-
-    return "0", fmt.Errorf("failed to return requested statistic")
+    return response, nil
 }
 
 // this is explicitly for staff only commands, and checks whether or not
