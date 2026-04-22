@@ -36,6 +36,8 @@ ${BOLD}Options:${CLEAR}
 
     -n  Specify the author nickname to query the log for
 
+    -s  Specify the message content to query the log for
+
     -d  Search for only deleted messages (does not take a value)
 
     -e  Search for only edited messages (does not take a value)
@@ -48,13 +50,14 @@ ${BOLD}Options:${CLEAR}
 case "$1" in
     help|--h|-h|'') help ;;
     *)
-        while getopts "m:c:a:u:n:det" opts ; do
+        while getopts "m:c:a:u:n:s:det" opts ; do
             case "${opts}" in
                 m) message_id="$OPTARG" ;;
                 c) channel_id="$OPTARG" ;;
                 a) author_id="$OPTARG";;
                 u) author_username="$OPTARG" ;;
                 n) author_nickname="$OPTARG" ;;
+                s) message_content="$OPTARG" ;;
                 d) deleted=true ;;
                 e) edited=true ;;
                 t) attachment=true ;;
@@ -65,7 +68,7 @@ case "$1" in
 esac
 
 # this is going to have to be slightly messy given the amount of ways this can be invoked, my apologies
-query='.[]'
+query='.'
 
 [ -n "$message_id" ] &&
     query="$query | select(.message_ID == \"$message_id\")"
@@ -78,6 +81,9 @@ query='.[]'
 
 [ -n "$author_username" ] &&
     query="$query | select(.author_username == \"$author_username\")"
+
+[ -n "$message_content" ] &&
+    query="$query | select(.content | contains(\"$message_content\"))"
 
 [ -n "$author_nickname" ] &&
     query="$query | select(.author_nickname == \"$author_nickname\")"
