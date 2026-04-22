@@ -9,7 +9,6 @@ import (
     "os"
     "os/signal"
     "syscall"
-    "strings"
     "time"
 )
 
@@ -132,8 +131,12 @@ func main() {
             message_count = <-logfile_reset_channel
         }
 
-        // split up user message by spaces
-        opts := strings.Split(m.Content, " ")
+        // split user message into tokens
+        opts, err := tokenize(m.Content)
+        if err != nil {
+            log.Print("iw4x-discord-bot: failed to parse user message: ", err)
+            return
+        }
 
         // if the first opt here isn't the bot prefix, do nothing
         if opts[0] != prefix {

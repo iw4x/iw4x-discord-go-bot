@@ -243,7 +243,7 @@ func cycle_logfile(location string, log_archive_dir string) (error) {
     return nil
 }
 
-func query_db(location string, opts []string) ([]string, error) {
+func query_db(location string, opts []string, invoking_message_id string) ([]string, error) {
     type Attachment struct {}
 
     type Database struct {
@@ -265,6 +265,7 @@ func query_db(location string, opts []string) ([]string, error) {
     var a_value string
     var u_value string
     var n_value string
+    var s_value string
     var d_value bool
     var e_value bool
     var t_value bool
@@ -277,6 +278,7 @@ func query_db(location string, opts []string) ([]string, error) {
     flags.StringVar(&a_value, "a", "", "Author ID")
     flags.StringVar(&u_value, "u", "", "Author Username")
     flags.StringVar(&n_value, "n", "", "Author Nickname")
+    flags.StringVar(&s_value, "s", "", "Message Content")
 
     flags.BoolVar(&d_value, "d", false, "Deleted messages") // these just need to be toggled and do not take a value
     flags.BoolVar(&e_value, "e", false, "Edited messages")
@@ -311,6 +313,11 @@ func query_db(location string, opts []string) ([]string, error) {
             continue
         }
 
+        // !iw4x querydb shouldnt match its own filters, but it's still logged for *later* queries
+        if db.MID == invoking_message_id {
+            continue
+        }
+
         if m_value != "" && m_value != db.MID { // if m_value is empty, this opt probably wasnt specified
             keep = false
         }
@@ -330,7 +337,12 @@ func query_db(location string, opts []string) ([]string, error) {
         if n_value != "" && n_value != db.ANickname {
             keep = false
         }
- 
+
+        // make the query case-insensitive
+        if s_value != "" && !strings.Contains(strings.ToLower(db.Content), strings.ToLower(s_value)) {
+            keep=false
+        }
+
         if d_value && db.MType != "deletion" {
             keep = false
         }
@@ -406,4 +418,51 @@ func is_staff_command(opt string) (bool) {
     }
 
     return false
+}
+
+// this lets us combine user commands into tokens, anything wrapped in double quores is kept intact
+func tokenize(s string) ([]string, error) {
+    var tokens []string // list of tokens to be passed back
+    var current strings.Builder // temporary storage for building tokens
+    in_quotes := false
+    has_token := false
+
+    for i := 0; i < len(s); i++ {
+        c := s[i]
+
+        if in_quotes {
+            if c == '"' {
+                in_quotes = false
+                continue
+            }
+            current.WriteByte(c)
+            continue
+        }
+
+        // outside of a quoted region
+        if c == '"' {
+            in_quotes = true
+            has_token = true // opening a quote starts a token even if empty inside
+            continue
+        } else if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
+            if has_token {
+                tokens = append(tokens, current.String())
+                current.Reset()
+                has_token = false
+            }
+            continue
+        }
+        current.WriteByte(c)
+        has_token = true
+    }
+
+    if in_quotes {
+        return nil, fmt.Errorf("unclosed double quote")
+    }
+
+    if has_token {
+        tokens = append(tokens, current.String())
+    }
+
+    return tokens, nil
 }

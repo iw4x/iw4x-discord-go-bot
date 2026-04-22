@@ -336,8 +336,9 @@ func command_staffhelp() (string, string) {
 
     var output = []string{"- `!iw4x staffhelp` - Displays this help dialog",
     "- `!iw4x restart` - Sends the bot a signal to restart itself",
-    "- `!iw4x querydb -m <messageid> -c <channelid> -a <authorid> -u <authorusername> -n <authornickname> -d -e -t` - Query the message log database",
+    "- `!iw4x querydb -m <messageid> -c <channelid> -a <authorid> -u <authorusername> -n <authornickname> -s \"<content>\" -d -e -t` - Query the message log database",
     "    - This does not require all options, but requires at least one. In the case of `-d`, `-e`, and `-t`, this will filter the output to deleted, edited, and messages with attachments only, respectively.",
+    "  - `-s` performs a case-insensitive search for message content. Wrap queries containing spaces in double quotes.",
     "- `!iw4x logstat` - Displays statistics about the message log",
     "- `!iw4x uptime` - Displays bot uptime"}
 
@@ -370,7 +371,7 @@ func command_logstat(message_count int, location string) (string, string) {
 }
 
 func command_querydb(opts []string, location string, s *discordgo.Session, m *discordgo.MessageCreate) (error) {
-    query_results, err := query_db(location, opts[:])
+    query_results, err := query_db(location, opts[:], m.ID)
     if err != nil {
         s.ChannelMessageSend(m.ChannelID, err.Error())
         return err
