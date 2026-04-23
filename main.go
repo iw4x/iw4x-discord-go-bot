@@ -9,6 +9,7 @@ import (
     "os"
     "os/signal"
     "syscall"
+    "strings"
     "time"
 )
 
@@ -131,12 +132,8 @@ func main() {
             message_count = <-logfile_reset_channel
         }
 
-        // split user message into tokens
-        opts, err := tokenize(m.Content)
-        if err != nil {
-            log.Print("iw4x-discord-bot: failed to parse user message: ", err)
-            return
-        }
+        // split up user message by spaces
+        opts := strings.Split(m.Content, " ")
 
         // if the first opt here isn't the bot prefix, do nothing
         if opts[0] != prefix {
@@ -175,13 +172,24 @@ func main() {
                     err = create_send_response(header, body, s, m)
 
                 case "querydb":
-                    if len(opts) < 3 {
+                    // querydb needs to have tokenized opts to allow for
+                    // quoted message content searches like "this is a query"
+                    querydb_opts, terr := tokenize(m.Content)
+                    if terr != nil {
+                        header := "Invalid quoting!"
+                        body := "Failed to parse command arguments due to a stray double-quote."
+                        err = create_send_response(header, body, s, m)
+                        return
+                    }
+
+                    if len(querydb_opts) < 3 {
                         header := "Not enough arguments!"
                         body := "Expected `!iw4x querydb <opts>`.\nSee `!iw4x staffhelp` for more information on valid commands."
                         err = create_send_response(header, body, s, m)
                         return
                     }
-                    err = command_querydb(opts[2:], location, s, m)
+
+                    err = command_querydb(querydb_opts[2:], location, s, m)
 
                 case "logstat":
                     header, body := command_logstat(message_count, location)
