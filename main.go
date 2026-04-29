@@ -4,7 +4,6 @@ import (
     "github.com/bwmarrin/discordgo"
 
     "io"
-    "sync/atomic"
     "path/filepath"
     "log/slog"
     "log"
@@ -59,7 +58,8 @@ func main() {
     // we can't just defer f.Close() because cycle_logfile may have replaced f with a different file
     // by the time this function exits
     defer func() {
-        if active, ok := log_writer.Swap(io.Discard).(*os.File); ok {
+        old, _ := log_writer.Swap(io.Discard)
+        if active, ok := old.(*os.File); ok {
             active.Close()
         }
     }()
@@ -74,9 +74,12 @@ func main() {
     }
 
     // on first startup / restart we need to check how large the message database is
-    var message_count atomic.Int64 // using atomic variables here should prevent data races
     initial_count, err := get_logfile_length(location)
-    message_count.Store(int64(initial_count))
+    if err != nil {
+        log.Print("iw4x-discord-bot: failed to get logfile length: ", err)
+        return
+    }
+    log_writer.SetCount(int64(initial_count))
 
     // this is the channel that will be used to listen for triggers to cycle logs
     logfile_channel := make(chan bool)
@@ -88,14 +91,10 @@ func main() {
         for range logfile_channel {
             logfile_cycle_timer := time.Now()
 
-            // capture the current count before cycling
-            snapshot := message_count.Load()
             if err := cycle_logfile(location, log_archive_dir, log_writer); err != nil {
                 log.Print("iw4x-discord-bot: failed to cycle logfile", err)
                 continue
             }
-            // subtract the "snapshot," this should preserve any increments that happened mid-cycle
-            message_count.Add(-snapshot)
             log.Print("iw4x-discord-bot: logfile cycle took: <", time.Since(logfile_cycle_timer), ">")
         }
     }()
@@ -129,12 +128,7 @@ func main() {
             "attachments", m.Attachments,
         )
 
-        // add to the message count and check size
-        message_count.Add(1)
-        if (message_count.Load() >= cycle_logcount) {
-            // if the message count exceeds cycle_logcount, signal another goroutine to
-            // cycle the logfile- we do this in another goroutine to prevent this process
-            // from hanging up the bots message handling
+        if log_writer.Count() >= cycle_logcount {
             select {
             case logfile_channel <- true:
                 log.Print("iw4x-discord-bot: logfile count has exceeded or matched <", cycle_logcount, ">: triggering cycle")
@@ -203,7 +197,7 @@ func main() {
                     err = command_querydb(querydb_opts[2:], location, s, m)
 
                 case "logstat":
-                    header, body := command_logstat(message_count.Load(), location)
+                    header, body := command_logstat(log_writer.Count(), location)
                     err = create_send_response(header, body, s, m)
 
                 case "uptime":

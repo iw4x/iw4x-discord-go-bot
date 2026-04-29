@@ -37,23 +37,42 @@ type MasterStats struct {
 type swappableWriter struct {
     mu sync.Mutex
     w io.Writer
+    count int64
 }
 
 // this satisfies io.Writer, lock is only held for the duration of a single write to the log
 func (s *swappableWriter) Write(p []byte) (int, error) {
     s.mu.Lock()
     defer s.mu.Unlock()
-    return s.w.Write(p)
+    n, err := s.w.Write(p)
+    if err == nil {
+        s.count++
+    }
+    return n, err
 }
 
 // replaces the underlying writer and returns the previous one
 // so it can be closed cleanly after archiving
-func (s *swappableWriter) Swap(new io.Writer) io.Writer {
+func (s *swappableWriter) Swap(new io.Writer) (io.Writer, int64) {
     s.mu.Lock()
     defer s.mu.Unlock()
-    old := s.w
-    s.w = new
-    return old
+    old, oldCount := s.w, s.count
+    s.w, s.count = new, 0
+    return old, oldCount
+}
+
+// count returns the number of successfully writes since the last swap
+func (s *swappableWriter) Count() int64 {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    return s.count
+}
+
+// seed the count based on the existing logfiles line count
+func (s *swappableWriter) SetCount(c int64) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    s.count = c
 }
 
 // builds embeds and sends output for all commands
@@ -224,7 +243,7 @@ func cycle_logfile(location string, log_archive_dir string, swappable *swappable
     }
 
     // atomically redirect the logger to the new file
-    old_writer := swappable.Swap(new_file)
+    old_writer, _ := swappable.Swap(new_file)
 
     // close the old file
     if old_file, ok := old_writer.(*os.File); ok {
