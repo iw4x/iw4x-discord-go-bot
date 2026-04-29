@@ -6,6 +6,7 @@ package main
 import (
     "github.com/bwmarrin/discordgo"
 
+    "sync"
     "time"
     "io"
     "os"
@@ -28,6 +29,31 @@ type MasterStats struct {
     Servers  int `json:"servers"`
     Bots     int `json:"bots"`
     Capacity int `json:"slots"`
+}
+
+// this gives us an io.writer that allows us to replace the underlying destination at runtime
+// this is needed so the slog handler can keep writing while cycle_logfile redirects
+// log entries to a new file without losing messages mid-cycle
+type swappableWriter struct {
+    mu sync.Mutex
+    w io.Writer
+}
+
+// this satisfies io.Writer, lock is only held for the duration of a single write to the log
+func (s *swappableWriter) Write(p []byte) (int, error) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    return s.w.Write(p)
+}
+
+// replaces the underlying writer and returns the previous one
+// so it can be closed cleanly after archiving
+func (s *swappableWriter) Swap(new io.Writer) io.Writer {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    old := s.w
+    s.w = new
+    return old
 }
 
 // builds embeds and sends output for all commands
@@ -182,16 +208,39 @@ func get_logfile_length(location string) (int, error) {
     return line_count, nil
 }
 
-func cycle_logfile(location string, log_archive_dir string) (error) {
-    logfile, err := os.Open(filepath.Join(location, "chatlog.json"))
+func cycle_logfile(location string, log_archive_dir string, swappable *swappableWriter) (error) {
+    active_path := filepath.Join(location, "chatlog.json")
+    cycling_path := filepath.Join(location, "chatlog.json.cycling")
+
+    // rename the active log, existing writers keep writing against the same inode
+    if err := os.Rename(active_path, cycling_path); err != nil {
+        return err
+    }
+
+    // open a fresh active log
+    new_file, err := os.OpenFile(active_path, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644)
     if err != nil {
         return err
     }
-    defer logfile.Close()
 
-    now := time.Now()
-    formatted_now := now.Format("06-01-02") // this will give us a date.gz backup in archive/
-	
+    // atomically redirect the logger to the new file
+    old_writer := swappable.Swap(new_file)
+
+    // close the old file
+    if old_file, ok := old_writer.(*os.File); ok {
+        if err := old_file.Close(); err != nil {
+            log.Print("iw4x-discord-bot: failed to close old logfile during cycle: ", err)
+        }
+    }
+
+    // archive the cycled out logfile, open for reading separately
+    cycling_file, err := os.Open(cycling_path)
+    if err != nil {
+        return err
+    }
+    defer cycling_file.Close()
+
+    formatted_now := time.Now().Format("06-01-2") // date.gz in archive/
     archive_path := filepath.Join(log_archive_dir, formatted_now+".gz")
     destination, err := os.Create(archive_path)
     if err != nil {
@@ -204,18 +253,18 @@ func cycle_logfile(location string, log_archive_dir string) (error) {
         return err
     }
     defer gzip_writer.Close()
-	
-    if _, err := io.Copy(gzip_writer, logfile); err != nil {
+
+    if _, err := io.Copy(gzip_writer, cycling_file); err != nil {
         return err
     }
 
-    // truncate logfile to clear it out
-    if err := os.Truncate(filepath.Join(location, "chatlog.json"), 0); err != nil {
-        log.Print(err)
-        return err
+    // remove cycle file
+    cycling_file.Close()
+    if err := os.Remove(cycling_path); err != nil {
+        log.Print("iw4x-discord-bot: failed to remove cycle logfile: ", err)
     }
 
-    return nil
+    return err
 }
 
 func query_db(location string, opts []string, invoking_message_id string) ([]string, error) {

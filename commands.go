@@ -148,7 +148,7 @@ func command_vcredist() (string, string) {
     "",
     "If this did not solve your issue, please describe the problem in the <#1420088697960796170> channel.",
     "",
-    "If you get errors related to d3d9.dll or xinput1_3.dll, see the `!iw4x directx` command for information."}
+    "If you get errors related to d3d9.dll or xinput1_3.dll, see the `!iw4x dxr` command for information."}
 
     body := strings.Join(output[:], "\n")
 
@@ -284,8 +284,7 @@ func command_game() (string, string) {
 
     var output = []string{"The **only** supported copy of MW2 is from [Steam](https://store.steampowered.com/app/10180/Call_of_Duty_Modern_Warfare_2_2009/). The Microsoft Store version of MW2 will not work.",
     "",
-    "Support will not be provided for non-Steam copies of the game.",
-    ""}
+    "Support will not be provided for non-Steam copies of the game."}
 
     body := strings.Join(output[:], "\n")
 
@@ -348,11 +347,11 @@ func command_staffhelp() (string, string) {
     return header, body
 }
 
-func command_logstat(message_count int, location string) (string, string) {
+func command_logstat(message_count int64, location string) (string, string) {
     header := "Log Statistics"
 
     // convert to string for reply
-    count_output := strconv.Itoa(message_count)
+    count_output := strconv.FormatInt(message_count, 10)
 
     logfile_stat, err := os.Stat(filepath.Join(location, "chatlog.json"))
     if err != nil {
