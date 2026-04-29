@@ -95,31 +95,6 @@ func create_send_status(s *discordgo.Session) (error) {
     return nil
 }
 
-func create_send_query(s *discordgo.Session, m *discordgo.MessageCreate) (error) {
-    file, err := os.Open("/tmp/queryresults.json")
-    if err != nil {
-        return err
-    }
-    defer file.Close()
-
-    message := &discordgo.MessageSend{
-        Content: "Query results:",
-        Files: []*discordgo.File{
-            {
-                Name: "query_results.json",
-                Reader: file,
-            },
-        },
-    }
-
-    _, err = s.ChannelMessageSendComplex(m.ChannelID, message)
-    if err != nil {
-        return err
-    }
-
-    return nil
-}
-
 func fetch_sale() (string, error) {
     type steam_sale map[string]struct {
         Data struct {
@@ -404,20 +379,7 @@ func send_join_message(s *discordgo.Session, joiner_id string) (error) {
 }
 
 func is_staff_command(opt string) (bool) {
-    switch staff_command := opt; staff_command {
-    case "restart":
-        return true
-    case "staffhelp":
-        return true
-    case "querydb":
-        return true
-    case "logstat":
-        return true
-    case "uptime":
-        return true
-    }
-
-    return false
+    return slices.Contains([]string{"restart", "staffhelp", "querydb", "logstat", "uptime"}, opt)
 }
 
 // this lets us combine user commands into tokens, anything wrapped in double quores is kept intact

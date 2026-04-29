@@ -3,6 +3,7 @@ package main
 import (
     "github.com/bwmarrin/discordgo"
 
+    "bytes"
     "strings"
     "strconv"
     "os"
@@ -390,13 +391,18 @@ func command_querydb(opts []string, location string, s *discordgo.Session, m *di
         return err
     }
 
-    // write query results to file
-    if err := os.WriteFile("/tmp/queryresults.json", pretty_query_results, 0644); err != nil {
-        return err
+    message := &discordgo.MessageSend {
+        Content: "Query results:",
+            Files: []*discordgo.File {
+            {
+                Name: "query_results.json",
+                Reader: bytes.NewReader(pretty_query_results),
+            },
+        },
     }
 
-    // upload file to discord
-    if err := create_send_query(s, m); err != nil {
+    // send response
+    if _, err := s.ChannelMessageSendComplex(m.ChannelID, message); err != nil {
         return err
     }
 
