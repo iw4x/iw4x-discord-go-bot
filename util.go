@@ -240,7 +240,7 @@ func cycle_logfile(location string, log_archive_dir string, swappable *swappable
     }
     defer cycling_file.Close()
 
-    formatted_now := time.Now().Format("06-01-2") // date.gz in archive/
+    formatted_now := time.Now().Format("06-01-02") // date.gz in archive/
     archive_path := filepath.Join(log_archive_dir, formatted_now+".gz")
     destination, err := os.Create(archive_path)
     if err != nil {
