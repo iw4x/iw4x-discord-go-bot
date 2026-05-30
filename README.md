@@ -33,6 +33,7 @@ This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the mome
     - `-s` performs a case-insensitive search for message content. Wrap queries containing spaces in double quotes.
 - `!iw4x logstat` - Displays statistics about the active message log
 - `!iw4x uptime` - Displays bot uptime
+- `!iw4x snipe` - Displays the most recently deleted message in the log
 
 # logreader.sh
 

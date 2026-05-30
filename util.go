@@ -447,7 +447,7 @@ func send_join_message(s *discordgo.Session, joiner_id string) (error) {
 }
 
 func is_staff_command(opt string) (bool) {
-    return slices.Contains([]string{"restart", "staffhelp", "querydb", "logstat", "uptime"}, opt)
+    return slices.Contains([]string{"restart", "staffhelp", "querydb", "logstat", "uptime", "snipe"}, opt)
 }
 
 // this lets us combine user commands into tokens, anything wrapped in double quores is kept intact

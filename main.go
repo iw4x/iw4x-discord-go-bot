@@ -203,6 +203,10 @@ func main() {
                 case "uptime":
                     output_uptime := time.Since(uptime)
                     _, err = s.ChannelMessageSend(m.ChannelID, "awake for " + output_uptime.String())
+
+                case "snipe":
+                    header, body := command_snipe(m.ChannelID, location)
+                    err = create_send_response(header, body, s, m)
                 }
 
                 if err != nil {

@@ -10,6 +10,7 @@ import (
     "log"
     "path/filepath"
     "encoding/json"
+    "bufio"
 )
 
 // all of the functions here need to return a title and body of type string
@@ -340,7 +341,8 @@ func command_staffhelp() (string, string) {
     "    - This does not require all options, but requires at least one. In the case of `-d`, `-e`, and `-t`, this will filter the output to deleted, edited, and messages with attachments only, respectively.",
     "  - `-s` performs a case-insensitive search for message content. Wrap queries containing spaces in double quotes.",
     "- `!iw4x logstat` - Displays statistics about the message log",
-    "- `!iw4x uptime` - Displays bot uptime"}
+    "- `!iw4x uptime` - Displays bot uptime",
+    "- `!iw4x snipe` - Displays the most recently deleted message in the log"}
 
     body := strings.Join(output[:], "\n")
 
@@ -406,4 +408,56 @@ func command_querydb(opts []string, location string, s *discordgo.Session, m *di
     }
 
     return nil
+}
+
+func command_snipe(channelID string, location string) (string, string) {
+    type LogEntry struct {
+        MType     string `json:"type"`
+        Content   string `json:"content"`
+        MID       string `json:"message_id"`
+        CID       string `json:"channel_id"`
+        AID       string `json:"author_id"`
+    }
+
+    file, err := os.Open(filepath.Join(location, "chatlog.json"))
+    if err != nil {
+        log.Print("iw4x-discord-bot: failed to open message log for snipe command")
+        return "Snipe", "Failed to open message log."
+    }
+    defer file.Close()
+
+    // scan the whole log, keeping track of the last deletion in this channel
+    // and all messages by ID so we can look up the content
+    var last_deleted_id string
+    messages := make(map[string]LogEntry)
+
+    scanner := bufio.NewScanner(file)
+    for scanner.Scan() {
+        var entry LogEntry
+        if err := json.Unmarshal([]byte(scanner.Text()), &entry); err != nil {
+            continue
+        }
+        if entry.CID != channelID {
+            continue
+        }
+        if entry.MType == "message" {
+            messages[entry.MID] = entry
+        } else if entry.MType == "deletion" {
+            last_deleted_id = entry.MID
+        }
+    }
+
+    if last_deleted_id == "" {
+        return "Snipe", "No deleted messages found in this channel."
+    }
+
+    msg, ok := messages[last_deleted_id]
+    if !ok {
+        return "Snipe", "Deleted message was not found in the log."
+    }
+
+    header := "Sniped Message"
+    body := "**Author:** <@" + msg.AID + ">\n\n" + msg.Content
+
+    return header, body
 }
