@@ -145,6 +145,10 @@ func main() {
         // and return quickly, further processing not needed
         // the 1 in the arguments here is to delete the past 1 day of history from this user
         if m.ChannelID == honeypot_channel {
+            if check_permissions(m) { // skip staff
+                return
+            }
+
             if err := s.GuildBanCreateWithReason(m.GuildID, m.Author.ID, "User sent message in the honeypot channel.", 1); err != nil {
                 log.Print("iw4x-discord-bot: failed to ban user in honeypot channel: ", err)
                 return
