@@ -88,6 +88,10 @@ func main() {
     // this is the channel that will be used to listen for triggers to cycle logs
     logfile_channel := make(chan bool)
 
+    // buffered so the message handler doesn't block on a honeypot ban
+    // this is a pretty large buffer
+    honeypot_bans := make(chan string, 256)
+
     // create a thread for logfile cycling
     // this will perpetually listen and when it is sent a signal
     // it will cycle the logfile, this should never need to exit
@@ -154,6 +158,14 @@ func main() {
                 return
             }
             log.Print("iw4x-discord-bot: honeypot autobanned user: <" + m.Author.ID + ":" + m.Author.Username + ">")
+
+            select {
+            case honeypot_bans <- m.Author.ID:
+            default:
+                // just a theoretical, if the counter is backed up just skip the increment,
+                // the ban already happened
+                log.Print("iw4x-discord-bot: honeypot counter queue full, dropping increment")
+            }
             return
         }
 
@@ -433,6 +445,10 @@ func main() {
     }
 
     log.Print("iw4x-discord-bot: active")
+
+    // we can just start the counter here, its fine as soon as
+    // the session is ready
+    go run_honeypot_counter(session, location, honeypot_bans)
 
     // when this function returns, close the session with discord
     defer session.Close()
