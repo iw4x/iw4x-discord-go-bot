@@ -174,7 +174,7 @@ func fetch_sale() (string, error) {
 // this function can pull various information about iw4x from the master
 func fetch_master_stats() (MasterStats, error) {
     var response MasterStats
-    r, err := http.Get("https://master." + base_url + "v1/stats?protocol=152")
+    r, err := http.Get("https://master." + base_url + "v1/stats?protocol=153")
     if err != nil {
         return MasterStats{}, err
     }
