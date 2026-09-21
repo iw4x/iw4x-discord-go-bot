@@ -310,20 +310,25 @@ func command_dlc() (string, string) {
 
 func command_stats() (string, string) {
     header := "IW4x server network statistics"
-    stats, err := fetch_master_stats()
-    if err != nil {
+    stats, stats_err := fetch_master_stats()
+    x64, x64_err := fetch_x64_population()
+    if stats_err != nil && x64_err != nil {
         return "", ""
     }
 
-    current_players := strconv.Itoa(stats.Players)
-    bot_count := strconv.Itoa(stats.Bots)
-    server_count := strconv.Itoa(stats.Servers)
-    server_capacity := strconv.Itoa(stats.Capacity)
+    var output []string
 
-    var output = []string{"Current players: `"+current_players+"`",
-    "Bot count: `"+bot_count+"`",
-    "Server count: `"+server_count+"`",
-    "Max player capacity: `"+server_capacity+"`"}
+    if stats_err == nil {
+        output = append(output, "Current players: `"+strconv.Itoa(stats.Players)+"`",
+        "Bot count: `"+strconv.Itoa(stats.Bots)+"`",
+        "Server count: `"+strconv.Itoa(stats.Servers)+"`",
+        "Max player capacity: `"+strconv.Itoa(stats.Capacity)+"`")
+    }
+
+    if x64_err == nil {
+        output = append(output, "x64 players online: `"+strconv.Itoa(x64.Online)+"`",
+        "x64 players in lobbies: `"+strconv.Itoa(x64.Playing)+"`")
+    }
 
     body := strings.Join(output[:], "\n")
 

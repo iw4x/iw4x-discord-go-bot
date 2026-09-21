@@ -31,6 +31,13 @@ type MasterStats struct {
     Capacity int `json:"slots"`
 }
 
+// the player counts the x64 platform returns
+type X64Population struct {
+    Online    int            `json:"online"`
+    Playing   int            `json:"playing"`
+    Playlists map[string]int `json:"playlists"`
+}
+
 // this gives us an io.writer that allows us to replace the underlying destination at runtime
 // this is needed so the slog handler can keep writing while cycle_logfile redirects
 // log entries to a new file without losing messages mid-cycle
@@ -95,24 +102,30 @@ func create_send_response(header string, body string, s *discordgo.Session, m *d
 
 // builds and sends output for player count in status
 func create_send_status(s *discordgo.Session) (error) {
+    // neither of these return so the bot can apply its "Currently sleeping.." status
+    var players, x64_players int
     stats, err := fetch_master_stats()
-    var players string
     if err != nil {
-        // this doesn't return so the bot can apply its "Currently sleeping.." status
         log.Print("iw4x-discord-bot: failed to fetch player count: ", err)
-        players = "0"
     } else {
-        players = strconv.Itoa(stats.Players)
+        players = stats.Players
     }
 
-    if players != "0" {
+    x64, err := fetch_x64_population()
+    if err != nil {
+        log.Print("iw4x-discord-bot: failed to fetch x64 player count: ", err)
+    } else {
+        x64_players = x64.Online
+    }
+
+    if players != 0 || x64_players != 0 {
         err := s.UpdateStatusComplex(discordgo.UpdateStatusData { // https://pkg.go.dev/github.com/bwmarrin/discordgo#UpdateStatusData
             Status: "online", // try to prevent the bot from getting sleepy
             Activities: []*discordgo.Activity { // https://pkg.go.dev/github.com/bwmarrin/discordgo#Activity
                 {
                     Type: 4, // https://pkg.go.dev/github.com/bwmarrin/discordgo#ActivityType
                     Name: "Custom Status", // i have no idea why this won't work without this but sure
-                    State: "Current players: " + players,
+                    State: "Current players - x86: " + strconv.Itoa(players) + " | x64: " + strconv.Itoa(x64_players),
                 },
             },
         })
@@ -196,6 +209,32 @@ func fetch_master_stats() (MasterStats, error) {
     return response, nil
 }
 
+// pulls the player counts of the x64 platform
+func fetch_x64_population() (X64Population, error) {
+    var response X64Population
+    client := http.Client{Timeout: 10 * time.Second}
+    r, err := client.Get(x64_population_url)
+    if err != nil {
+        return X64Population{}, err
+    }
+    defer r.Body.Close()
+
+    body, err := io.ReadAll(r.Body)
+    if err != nil {
+        return X64Population{}, err
+    }
+
+    if r.StatusCode != http.StatusOK {
+        return X64Population{}, fmt.Errorf("%s", r.Status)
+    }
+
+    if err := json.Unmarshal(body, &response); err != nil {
+        return X64Population{}, err
+    }
+
+    return response, nil
+}
+
 // this is explicitly for staff only commands, and checks whether or not
 // the command issuer has the 'staff' role or not- if not, it will return 1.
 func check_permissions(m *discordgo.MessageCreate) (bool) {
@@ -212,7 +251,7 @@ func get_logfile_length(location string) (int, error) {
     if err != nil {
         return 0, err
     }
-    defer logfile.Close() // close the file once this function returns 
+    defer logfile.Close() // close the file once this function returns
 
     line_count := 0
     scanner := bufio.NewScanner(logfile)
@@ -223,7 +262,7 @@ func get_logfile_length(location string) (int, error) {
     if err := scanner.Err(); err != nil {
         return 0, err
     }
-	
+
     return line_count, nil
 }
 
@@ -326,7 +365,7 @@ func query_db(location string, opts []string, invoking_message_id string) ([]str
     flags.BoolVar(&d_value, "d", false, "Deleted messages") // these just need to be toggled and do not take a value
     flags.BoolVar(&e_value, "e", false, "Edited messages")
     flags.BoolVar(&t_value, "t", false, "Attachment messages")
-    
+
     if err := flags.Parse(opts[:]); err != nil {
         return nil, err
     }
@@ -342,13 +381,13 @@ func query_db(location string, opts []string, invoking_message_id string) ([]str
 
     // this is used to track uniqueness so we don't populate duplicates
     seen := make(map[string]bool)
-    
+
     scanner := bufio.NewScanner(file)
-    
+
     for scanner.Scan() {
         line := scanner.Text()
         keep := true
-        
+
         var db Database
 
         if err := json.Unmarshal([]byte(line), &db); err != nil {
@@ -397,7 +436,7 @@ func query_db(location string, opts []string, invoking_message_id string) ([]str
         if t_value && len(db.Attachments) == 0 {
             keep = false
         }
-        
+
         if keep && !seen[line] {
             matching_db_entries = append(matching_db_entries, line)
             seen[line] = true
