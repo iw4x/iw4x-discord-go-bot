@@ -18,6 +18,9 @@ import (
 // to change in the future, if there are any more "events"
 const base_url string = "iw4x.io/" // this variable is global and applies to both util.go and commands.go
 
+// where the x64 platform serves its player counts
+const x64_population_url string = "http://147.135.10.99:8443/population"
+
 // we'll ignore any message that doesn't
 // begin with this
 const prefix string = "!iw4x"
