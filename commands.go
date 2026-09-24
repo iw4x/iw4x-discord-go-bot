@@ -326,8 +326,8 @@ func command_stats() (string, string) {
     }
 
     if x64_err == nil {
-        output = append(output, "x64 players online: `"+strconv.Itoa(x64.Online)+"`",
-        "x64 players in lobbies: `"+strconv.Itoa(x64.Playing)+"`")
+        output = append(output, "IW4x (mm) players online: `"+strconv.Itoa(x64.Online)+"`",
+        "IW4x (mm) players in lobbies: `"+strconv.Itoa(x64.Playing)+"`")
     }
 
     body := strings.Join(output[:], "\n")
