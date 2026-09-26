@@ -125,7 +125,7 @@ func create_send_status(s *discordgo.Session) (error) {
                 {
                     Type: 4, // https://pkg.go.dev/github.com/bwmarrin/discordgo#ActivityType
                     Name: "Custom Status", // i have no idea why this won't work without this but sure
-                    State: "Current players - x86: " + strconv.Itoa(players) + " | x64: " + strconv.Itoa(x64_players),
+                    State: "Current players: " + strconv.Itoa(players) + " on IW4x · " + strconv.Itoa(x64_players) + " on IW4x (mm)",
                 },
             },
         })
