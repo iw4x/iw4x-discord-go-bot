@@ -359,7 +359,8 @@ func main() {
     })
 
     // this is pretty much the same thing as above but for steam sales instead
-    var is_currently_on_sale bool = false // track current sale
+    // this file exists while an announced sale is on going so a restart doesn't reannounce
+    sale_marker := filepath.Join(location, "sale_announced")
     var stale_sale chan bool
     session.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
         if stale_sale != nil { close(stale_sale) }
@@ -372,7 +373,11 @@ func main() {
                 sale_percentage, err := fetch_sale()
                 if err != nil {
                     log.Print("iw4x-discord-bot: failed to check for steam sale: ", err)
+                    continue // a failed check doesn't mean the sale ended
                 }
+
+                _, err = os.Stat(sale_marker)
+                is_currently_on_sale := err == nil
 
                 if sale_percentage != "0" {
                     if !is_currently_on_sale {
@@ -383,7 +388,9 @@ func main() {
                         if err != nil {
                             log.Print("iw4x-discord-bot: failed to send steam sale notification: ", err)
                         }
-                        is_currently_on_sale = true
+                        if err := os.WriteFile(sale_marker, nil, 0644); err != nil {
+                            log.Print("iw4x-discord-bot: failed to create sale marker")
+                        }
                     }
                 } else {
                     if is_currently_on_sale {
@@ -392,7 +399,9 @@ func main() {
                             log.Print("iw4x-discord-bot: failed to send steam sale notification: ", err)
                         }
                     }
-                    is_currently_on_sale = false
+                    if err := os.Remove(sale_marker); err != nil {
+                        log.Print("iw4x-discord-bot: failed to remove sale marker")
+                    }
                 }
 
             case _, _ = <-stale_sale:
@@ -411,8 +420,8 @@ func main() {
         return
     })
 
-	// log message deletion
-	session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDelete) {
+    // log message deletion
+    session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDelete) {
         message_logger.Info(
             "message-logger",
             "type", "deletion",
@@ -423,8 +432,8 @@ func main() {
         return
     })
 
-	// log message edits
-	session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
+    // log message edits
+    session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
         message_logger.Info(
             "message-logger",
             "type", "edit",
