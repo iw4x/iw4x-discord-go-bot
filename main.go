@@ -3,9 +3,7 @@ package main
 import (
     "github.com/bwmarrin/discordgo"
 
-    "io"
     "path/filepath"
-    "log/slog"
     "log"
     "os"
     "os/signal"
@@ -28,9 +26,6 @@ const prefix string = "!iw4x"
 // staff role ID for privileged command authentication
 const staff_role_id string = "1111982635955277854"
 
-// what message count to target to trigger a logfile cycle
-const cycle_logcount int64 = 15000
-
 // the honeypot channel ID
 // the bot will watch this channel and autoban anyone who sends a message there
 const honeypot_channel string = "1524421140225720430"
@@ -46,69 +41,14 @@ func main() {
         return
     }
 
-    // message logging stuff, this can be kept open so not inside of the handler
-    location, err := os.Getwd() // get the directory the bot is being run from, we can just log to a file right next to the bin
+    location, err := os.Getwd()
     if err != nil {
         log.Print("iw4x-discord-bot: failed to get current working directory: ", err)
     }
 
-    f, err := os.OpenFile(filepath.Join(location, "chatlog.json"), os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644) // the file to log to
-    if err != nil {
-        log.Fatal("iw4x-discord-bot: could not open logfile: ", err)
-    }
-    defer f.Close()
-
-    // wrap the file in a swappableWriter so cycle_logfile can redirect entries to a fresh file mid-run without being lossy
-    log_writer := &swappableWriter{w: f}
-
-    // at shutdown, close whatever file is the active log target
-    // we can't just defer f.Close() because cycle_logfile may have replaced f with a different file
-    // by the time this function exits
-    defer func() {
-        old, _ := log_writer.Swap(io.Discard)
-        if active, ok := old.(*os.File); ok {
-            active.Close()
-        }
-    }()
-
-	// create our message logger, we want normal logs for everything but chat messages
-    message_logger := slog.New(slog.NewJSONHandler(log_writer, nil))
-
-    // create directory for log archive if it doesn't exist already
-    log_archive_dir := filepath.Join(location, "archive")
-    if err := os.MkdirAll(log_archive_dir, 0755); err != nil {
-        log.Fatal("iw4x-discord-bot: failed to create log archive directory: ", err)
-    }
-
-    // on first startup / restart we need to check how large the message database is
-    initial_count, err := get_logfile_length(location)
-    if err != nil {
-        log.Print("iw4x-discord-bot: failed to get logfile length: ", err)
-        return
-    }
-    log_writer.SetCount(int64(initial_count))
-
-    // this is the channel that will be used to listen for triggers to cycle logs
-    logfile_channel := make(chan bool)
-
     // buffered so the message handler doesn't block on a honeypot ban
     // this is a pretty large buffer
     honeypot_bans := make(chan string, 256)
-
-    // create a thread for logfile cycling
-    // this will perpetually listen and when it is sent a signal
-    // it will cycle the logfile, this should never need to exit
-    go func() {
-        for range logfile_channel {
-            logfile_cycle_timer := time.Now()
-
-            if err := cycle_logfile(location, log_archive_dir, log_writer); err != nil {
-                log.Print("iw4x-discord-bot: failed to cycle logfile", err)
-                continue
-            }
-            log.Print("iw4x-discord-bot: logfile cycle took: <", time.Since(logfile_cycle_timer), ">")
-        }
-    }()
 
     // spawn a new session
     session, err := discordgo.New("Bot " + token)
@@ -124,28 +64,6 @@ func main() {
         // if the author ID is the same as the session ID, do nothing
         if m.Author.ID == s.State.User.ID {
             return
-        }
-
-        // log user message before doing anything else with it
-        message_logger.Info(
-            "message-logger",
-            "type", "message",
-            "content", m.Content,
-            "message_ID", m.ID,
-            "channel_ID", m.ChannelID,
-            "author_ID", m.Author.ID,
-            "author_username", m.Author.Username,
-            "author_nickname", m.Author.GlobalName,
-            "attachments", m.Attachments,
-        )
-
-        if log_writer.Count() >= cycle_logcount {
-            select {
-            case logfile_channel <- true:
-                log.Print("iw4x-discord-bot: logfile count has exceeded or matched <", cycle_logcount, ">: triggering cycle")
-            default:
-                // cycle is already happening, don't do anything
-            }
         }
 
         // if the message is in the honeypot channel just autoban
@@ -211,37 +129,9 @@ func main() {
                     header, body := command_staffhelp()
                     err = create_send_response(header, body, s, m)
 
-                case "querydb":
-                    // querydb needs to have tokenized opts to allow for
-                    // quoted message content searches like "this is a query"
-                    querydb_opts, terr := tokenize(m.Content)
-                    if terr != nil {
-                        header := "Invalid quoting!"
-                        body := "Failed to parse command arguments due to a stray double-quote."
-                        err = create_send_response(header, body, s, m)
-                        return
-                    }
-
-                    if len(querydb_opts) < 3 {
-                        header := "Not enough arguments!"
-                        body := "Expected `!iw4x querydb <opts>`.\nSee `!iw4x staffhelp` for more information on valid commands."
-                        err = create_send_response(header, body, s, m)
-                        return
-                    }
-
-                    err = command_querydb(querydb_opts[2:], location, s, m)
-
-                case "logstat":
-                    header, body := command_logstat(log_writer.Count(), location)
-                    err = create_send_response(header, body, s, m)
-
                 case "uptime":
                     output_uptime := time.Since(uptime)
                     _, err = s.ChannelMessageSend(m.ChannelID, "awake for " + output_uptime.String())
-
-                case "snipe":
-                    header, body := command_snipe(m.ChannelID, location)
-                    err = create_send_response(header, body, s, m)
                 }
 
                 if err != nil {
@@ -255,8 +145,6 @@ func main() {
             }
         }
 
-        // this is done after the staff commands section because certain staff-only commands
-        // such as querydb expect a ton of opts as opposed to just requesting a help output
         if len(opts) > 2 { // if too many opts are given, return
             header := "Too many arguments!"
             body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
@@ -416,34 +304,6 @@ func main() {
         if err := send_join_message(s, joiner_id); err != nil {
             log.Print("iw4x-discord-bot: failed to send join message: ", err)
         }
-
-        return
-    })
-
-    // log message deletion
-    session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageDelete) {
-        message_logger.Info(
-            "message-logger",
-            "type", "deletion",
-            "message_ID", m.ID,
-            "channel_ID", m.ChannelID,
-        )
-
-        return
-    })
-
-    // log message edits
-    session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageUpdate) {
-        message_logger.Info(
-            "message-logger",
-            "type", "edit",
-            "content", m.Content,
-            "message_ID", m.ID,
-            "channel_ID", m.ChannelID,
-            "author_ID", m.Author.ID,
-            "author_username", m.Author.Username,
-            "author_nickname", m.Author.GlobalName,
-        )
 
         return
     })

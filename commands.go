@@ -1,16 +1,8 @@
 package main
 
 import (
-    "github.com/bwmarrin/discordgo"
-
-    "bytes"
     "strings"
     "strconv"
-    "os"
-    "log"
-    "path/filepath"
-    "encoding/json"
-    "bufio"
 )
 
 // all of the functions here need to return a title and body of type string
@@ -342,127 +334,9 @@ func command_staffhelp() (string, string) {
 
     var output = []string{"- `!iw4x staffhelp` - Displays this help dialog",
     "- `!iw4x restart` - Sends the bot a signal to restart itself",
-    "- `!iw4x querydb -m <messageid> -c <channelid> -a <authorid> -u <authorusername> -n <authornickname> -s \"<content>\" -d -e -t` - Query the message log database",
-    "    - This does not require all options, but requires at least one. In the case of `-d`, `-e`, and `-t`, this will filter the output to deleted, edited, and messages with attachments only, respectively.",
-    "  - `-s` performs a case-insensitive search for message content. Wrap queries containing spaces in double quotes.",
-    "- `!iw4x logstat` - Displays statistics about the message log",
-    "- `!iw4x uptime` - Displays bot uptime",
-    "- `!iw4x snipe` - Displays the most recently deleted message in the log"}
+    "- `!iw4x uptime` - Displays bot uptime"}
 
     body := strings.Join(output[:], "\n")
-
-    return header, body
-}
-
-func command_logstat(message_count int64, location string) (string, string) {
-    header := "Log Statistics"
-
-    // convert to string for reply
-    count_output := strconv.FormatInt(message_count, 10)
-
-    logfile_stat, err := os.Stat(filepath.Join(location, "chatlog.json"))
-    if err != nil {
-        log.Print("iw4x-discord-bot: failed to stat active logfile: ", err)
-        return "", ""
-    }
-    logfile_size := logfile_stat.Size()
-    logfile_size_kilobytes := float64(logfile_size) / 1024
-    logfile_size_output := strconv.FormatFloat(logfile_size_kilobytes, 'f', 2, 64)
-
-    var output = []string{"Active entries: "+ count_output,
-    "Size of active logfile: " + logfile_size_output + "KB"}
-
-    body := strings.Join(output[:], "\n")
-
-    return header, body
-}
-
-func command_querydb(opts []string, location string, s *discordgo.Session, m *discordgo.MessageCreate) (error) {
-    query_results, err := query_db(location, opts[:], m.ID)
-    if err != nil {
-        s.ChannelMessageSend(m.ChannelID, err.Error())
-        return err
-    }
-
-    // make results pretty for staff readability
-    // convert []string to []json.RawMessage
-    raw_objects := make([]json.RawMessage, len(query_results))
-    for i, str := range query_results {
-        raw_objects[i] = json.RawMessage(str)
-    }
-
-    // we can now use MarshalIndent to "blow out" the structure of the message
-    pretty_query_results, err := json.MarshalIndent(raw_objects, "", "  ")
-    if err != nil {
-        return err
-    }
-
-    message := &discordgo.MessageSend {
-        Content: "Query results:",
-            Files: []*discordgo.File {
-            {
-                Name: "query_results.json",
-                Reader: bytes.NewReader(pretty_query_results),
-            },
-        },
-    }
-
-    // send response
-    if _, err := s.ChannelMessageSendComplex(m.ChannelID, message); err != nil {
-        return err
-    }
-
-    return nil
-}
-
-func command_snipe(channelID string, location string) (string, string) {
-    type LogEntry struct {
-        MType     string `json:"type"`
-        Content   string `json:"content"`
-        MID       string `json:"message_id"`
-        CID       string `json:"channel_id"`
-        AID       string `json:"author_id"`
-    }
-
-    file, err := os.Open(filepath.Join(location, "chatlog.json"))
-    if err != nil {
-        log.Print("iw4x-discord-bot: failed to open message log for snipe command")
-        return "Snipe", "Failed to open message log."
-    }
-    defer file.Close()
-
-    // scan the whole log, keeping track of the last deletion in this channel
-    // and all messages by ID so we can look up the content
-    var last_deleted_id string
-    messages := make(map[string]LogEntry)
-
-    scanner := bufio.NewScanner(file)
-    for scanner.Scan() {
-        var entry LogEntry
-        if err := json.Unmarshal([]byte(scanner.Text()), &entry); err != nil {
-            continue
-        }
-        if entry.CID != channelID {
-            continue
-        }
-        if entry.MType == "message" {
-            messages[entry.MID] = entry
-        } else if entry.MType == "deletion" {
-            last_deleted_id = entry.MID
-        }
-    }
-
-    if last_deleted_id == "" {
-        return "Snipe", "No deleted messages found in this channel."
-    }
-
-    msg, ok := messages[last_deleted_id]
-    if !ok {
-        return "Snipe", "Deleted message was not found in the log."
-    }
-
-    header := "Sniped Message"
-    body := "**Author:** <@" + msg.AID + ">\n\n" + msg.Content
 
     return header, body
 }

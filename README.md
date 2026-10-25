@@ -28,18 +28,7 @@ This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the mome
 
 - `!iw4x staffhelp` - Displays this help dialog
 - `!iw4x restart` - Sends the bot a signal to restart itself (service manager dependent)
-- `!iw4x querydb -m <messageid> -c <channelid> -a <authorid> -u <authorusername> -n <authornickname> -s "<content>" -d -e -t` - Query the message log database
-    - This does not require all options, but requires at least one. In the case of `-d`, `-e`, and `-t`, this will filter the output to deleted, edited, and messages with attachments only, respectively.
-    - `-s` performs a case-insensitive search for message content. Wrap queries containing spaces in double quotes.
-- `!iw4x logstat` - Displays statistics about the active message log
 - `!iw4x uptime` - Displays bot uptime
-- `!iw4x snipe` - Displays the most recently deleted message in the log
-
-# logreader.sh
-
-This is a [shellcheck](https://www.shellcheck.net/) and POSIX compliant shell script intended for reading logs server-side, should the Discord querying system not be appropriate for the query for one reason or another. This is just contained in the source tree, and not shipped alongside binary releases of the bot.
-
-The only dependency external to what is provided by coreutils implementations such as GNU and Busybox is `jq`.
 
 # Building
 

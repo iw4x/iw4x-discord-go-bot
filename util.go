@@ -6,19 +6,13 @@ package main
 import (
     "github.com/bwmarrin/discordgo"
 
-    "sync"
     "time"
     "io"
-    "os"
-    "bufio"
     "net/http"
     "encoding/json"
     "log"
     "strconv"
     "slices"
-    "compress/gzip"
-    "path/filepath"
-    "flag"
     "strings"
     "fmt"
 )
@@ -36,50 +30,6 @@ type X64Population struct {
     Online    int            `json:"online"`
     Playing   int            `json:"playing"`
     Playlists map[string]int `json:"playlists"`
-}
-
-// this gives us an io.writer that allows us to replace the underlying destination at runtime
-// this is needed so the slog handler can keep writing while cycle_logfile redirects
-// log entries to a new file without losing messages mid-cycle
-type swappableWriter struct {
-    mu sync.Mutex
-    w io.Writer
-    count int64
-}
-
-// this satisfies io.Writer, lock is only held for the duration of a single write to the log
-func (s *swappableWriter) Write(p []byte) (int, error) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
-    n, err := s.w.Write(p)
-    if err == nil {
-        s.count++
-    }
-    return n, err
-}
-
-// replaces the underlying writer and returns the previous one
-// so it can be closed cleanly after archiving
-func (s *swappableWriter) Swap(new io.Writer) (io.Writer, int64) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
-    old, oldCount := s.w, s.count
-    s.w, s.count = new, 0
-    return old, oldCount
-}
-
-// count returns the number of successfully writes since the last swap
-func (s *swappableWriter) Count() int64 {
-    s.mu.Lock()
-    defer s.mu.Unlock()
-    return s.count
-}
-
-// seed the count based on the existing logfiles line count
-func (s *swappableWriter) SetCount(c int64) {
-    s.mu.Lock()
-    defer s.mu.Unlock()
-    s.count = c
 }
 
 // builds embeds and sends output for all commands
@@ -246,206 +196,6 @@ func check_permissions(m *discordgo.MessageCreate) (bool) {
     }
 }
 
-func get_logfile_length(location string) (int, error) {
-    logfile, err := os.Open(filepath.Join(location, "chatlog.json"))
-    if err != nil {
-        return 0, err
-    }
-    defer logfile.Close() // close the file once this function returns
-
-    line_count := 0
-    scanner := bufio.NewScanner(logfile)
-
-    for scanner.Scan() {
-        line_count++
-    }
-    if err := scanner.Err(); err != nil {
-        return 0, err
-    }
-
-    return line_count, nil
-}
-
-func cycle_logfile(location string, log_archive_dir string, swappable *swappableWriter) (error) {
-    active_path := filepath.Join(location, "chatlog.json")
-    cycling_path := filepath.Join(location, "chatlog.json.cycling")
-
-    // rename the active log, existing writers keep writing against the same inode
-    if err := os.Rename(active_path, cycling_path); err != nil {
-        return err
-    }
-
-    // open a fresh active log
-    new_file, err := os.OpenFile(active_path, os.O_RDWR | os.O_CREATE | os.O_APPEND, 0644)
-    if err != nil {
-        return err
-    }
-
-    // atomically redirect the logger to the new file
-    old_writer, _ := swappable.Swap(new_file)
-
-    // close the old file
-    if old_file, ok := old_writer.(*os.File); ok {
-        if err := old_file.Close(); err != nil {
-            log.Print("iw4x-discord-bot: failed to close old logfile during cycle: ", err)
-        }
-    }
-
-    // archive the cycled out logfile, open for reading separately
-    cycling_file, err := os.Open(cycling_path)
-    if err != nil {
-        return err
-    }
-    defer cycling_file.Close()
-
-    formatted_now := time.Now().Format("06-01-02") // date.gz in archive/
-    archive_path := filepath.Join(log_archive_dir, formatted_now+".gz")
-    destination, err := os.Create(archive_path)
-    if err != nil {
-        return err
-    }
-    defer destination.Close()
-
-    gzip_writer, err := gzip.NewWriterLevel(destination, gzip.BestCompression) // https://pkg.go.dev/compress/flate#BestCompression
-    if err != nil {
-        return err
-    }
-    defer gzip_writer.Close()
-
-    if _, err := io.Copy(gzip_writer, cycling_file); err != nil {
-        return err
-    }
-
-    // remove cycle file
-    cycling_file.Close()
-    if err := os.Remove(cycling_path); err != nil {
-        log.Print("iw4x-discord-bot: failed to remove cycle logfile: ", err)
-    }
-
-    return err
-}
-
-func query_db(location string, opts []string, invoking_message_id string) ([]string, error) {
-    type Attachment struct {}
-
-    type Database struct {
-        MType string `json:"type"`
-        Content string `json:"content"`
-        MID string `json:"message_id"`
-        CID string `json:"channel_id"`
-        AID string `json:"author_id"`
-        AUsername string `json:"author_username"`
-        ANickname string `json:"author_nickname"`
-        Attachments []Attachment `json:"attachments"`
-    }
-
-    // given these are discord messages, opt handling is a little bit odd
-    // we need to set up a few variables for potential opts to assign their values to
-    // any values given that aren't assigned here will simply be discarded
-    var m_value string
-    var c_value string
-    var a_value string
-    var u_value string
-    var n_value string
-    var s_value string
-    var d_value bool
-    var e_value bool
-    var t_value bool
-
-    flags := flag.NewFlagSet("querydb", flag.ContinueOnError)
-    flags.SetOutput(io.Discard) // don't print usage information to the serverside log
-
-    flags.StringVar(&m_value, "m", "", "Message ID")
-    flags.StringVar(&c_value, "c", "", "Channel ID")
-    flags.StringVar(&a_value, "a", "", "Author ID")
-    flags.StringVar(&u_value, "u", "", "Author Username")
-    flags.StringVar(&n_value, "n", "", "Author Nickname")
-    flags.StringVar(&s_value, "s", "", "Message Content")
-
-    flags.BoolVar(&d_value, "d", false, "Deleted messages") // these just need to be toggled and do not take a value
-    flags.BoolVar(&e_value, "e", false, "Edited messages")
-    flags.BoolVar(&t_value, "t", false, "Attachment messages")
-
-    if err := flags.Parse(opts[:]); err != nil {
-        return nil, err
-    }
-
-    file, err := os.Open(filepath.Join(location, "chatlog.json"))
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
-
-    // this is the slice we will populate matching lines into
-    var matching_db_entries []string
-
-    // this is used to track uniqueness so we don't populate duplicates
-    seen := make(map[string]bool)
-
-    scanner := bufio.NewScanner(file)
-
-    for scanner.Scan() {
-        line := scanner.Text()
-        keep := true
-
-        var db Database
-
-        if err := json.Unmarshal([]byte(line), &db); err != nil {
-            log.Print("iw4x-discord-bot: failed to parse database entry: ", err)
-            continue
-        }
-
-        // !iw4x querydb shouldnt match its own filters, but it's still logged for *later* queries
-        if db.MID == invoking_message_id {
-            continue
-        }
-
-        if m_value != "" && m_value != db.MID { // if m_value is empty, this opt probably wasnt specified
-            keep = false
-        }
-
-        if c_value != "" && c_value != db.CID {
-            keep = false
-        }
-
-        if a_value != "" && a_value != db.AID {
-            keep = false
-        }
-
-        if u_value != "" && u_value != db.AUsername {
-            keep = false
-        }
-
-        if n_value != "" && n_value != db.ANickname {
-            keep = false
-        }
-
-        // make the query case-insensitive
-        if s_value != "" && !strings.Contains(strings.ToLower(db.Content), strings.ToLower(s_value)) {
-            keep=false
-        }
-
-        if d_value && db.MType != "deletion" {
-            keep = false
-        }
-
-        if e_value && db.MType != "edit" {
-            keep = false
-        }
-
-        if t_value && len(db.Attachments) == 0 {
-            keep = false
-        }
-
-        if keep && !seen[line] {
-            matching_db_entries = append(matching_db_entries, line)
-            seen[line] = true
-        }
-    }
-
-    return matching_db_entries, nil
-}
-
 func send_join_message(s *discordgo.Session, joiner_id string) (error) {
     var output = []string{
         "Welcome to the IW4x server, <@"+joiner_id+">!",
@@ -486,52 +236,5 @@ func send_join_message(s *discordgo.Session, joiner_id string) (error) {
 }
 
 func is_staff_command(opt string) (bool) {
-    return slices.Contains([]string{"restart", "staffhelp", "querydb", "logstat", "uptime", "snipe"}, opt)
-}
-
-// this lets us combine user commands into tokens, anything wrapped in double quores is kept intact
-func tokenize(s string) ([]string, error) {
-    var tokens []string // list of tokens to be passed back
-    var current strings.Builder // temporary storage for building tokens
-    in_quotes := false
-    has_token := false
-
-    for i := 0; i < len(s); i++ {
-        c := s[i]
-
-        if in_quotes {
-            if c == '"' {
-                in_quotes = false
-                continue
-            }
-            current.WriteByte(c)
-            continue
-        }
-
-        // outside of a quoted region
-        if c == '"' {
-            in_quotes = true
-            has_token = true // opening a quote starts a token even if empty inside
-            continue
-        } else if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
-            if has_token {
-                tokens = append(tokens, current.String())
-                current.Reset()
-                has_token = false
-            }
-            continue
-        }
-        current.WriteByte(c)
-        has_token = true
-    }
-
-    if in_quotes {
-        return nil, fmt.Errorf("unclosed double quote")
-    }
-
-    if has_token {
-        tokens = append(tokens, current.String())
-    }
-
-    return tokens, nil
+    return slices.Contains([]string{"restart", "staffhelp", "uptime"}, opt)
 }
