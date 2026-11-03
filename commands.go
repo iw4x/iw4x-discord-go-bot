@@ -12,25 +12,25 @@ func command_help() (string, string) {
     header := "Available Commands"
 
     // create a list of strings for each line of the body
-    var output = []string{"- `!iw4x help` - Displays this help dialog",
-    "- `!iw4x install` - Information about installing IW4x.",
-    "- `!iw4x docs` - IW4x documentation",
-    "- `!iw4x discord` - Displays the invite link for this server",
-    "- `!iw4x github` - Displays the link to IW4x source code.",
-    "- `!iw4x repair` - Information on repairing your game files",
-    "- `!iw4x dedicated` - Information on setting up a dedicated server",
-    "- `!iw4x vcredist` - Information on installing VC++ Redistributables",
-    "- `!iw4x unlockstats` - Information on unlocking all items in the game",
-    "- `!iw4x performance` - Information on improving the games performance",
-    "- `!iw4x fps` - Information on changing the FPS limit",
-    "- `!iw4x fov` - Information on changing your FOV",
-    "- `!iw4x nickname` - Information on changing your in-game name",
-    "- `!iw4x console` - Information on the in-game command console",
-    "- `!iw4x dxr` - Information on installing DirectX and VC++ Redistributables (Error 0xc000007b)",
-    "- `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles",
-    "- `!iw4x game` - Information on supported copies of MW2",
-    "- `!iw4x dlc` - Information on MW2 and IW4x DLC",
-    "- `!iw4x stats` - Information on IW4x server statistics",
+    var output = []string{"- `/iw4x help` - Displays this help dialog",
+    "- `/iw4x install` - Information about installing IW4x.",
+    "- `/iw4x docs` - IW4x documentation",
+    "- `/iw4x discord` - Displays the invite link for this server",
+    "- `/iw4x github` - Displays the link to IW4x source code.",
+    "- `/iw4x repair` - Information on repairing your game files",
+    "- `/iw4x dedicated` - Information on setting up a dedicated server",
+    "- `/iw4x vcredist` - Information on installing VC++ Redistributables",
+    "- `/iw4x unlockstats` - Information on unlocking all items in the game",
+    "- `/iw4x performance` - Information on improving the games performance",
+    "- `/iw4x fps` - Information on changing the FPS limit",
+    "- `/iw4x fov` - Information on changing your FOV",
+    "- `/iw4x nickname` - Information on changing your in-game name",
+    "- `/iw4x console` - Information on the in-game command console",
+    "- `/iw4x dxr` - Information on installing DirectX and VC++ Redistributables (Error 0xc000007b)",
+    "- `/iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles",
+    "- `/iw4x game` - Information on supported copies of MW2",
+    "- `/iw4x dlc` - Information on MW2 and IW4x DLC",
+    "- `/iw4x stats` - Information on IW4x server statistics",
     "",
     "If you would like more information about IW4x, visit the official documentation at https://docs." + base_url}
 
@@ -141,7 +141,7 @@ func command_vcredist() (string, string) {
     "",
     "If this did not solve your issue, please describe the problem in the <#1420088697960796170> channel.",
     "",
-    "If you get errors related to d3d9.dll or xinput1_3.dll, see the `!iw4x dxr` command for information."}
+    "If you get errors related to d3d9.dll or xinput1_3.dll, see the `/iw4x dxr` command for information."}
 
     body := strings.Join(output[:], "\n")
 
@@ -156,7 +156,7 @@ func command_unlockstats() (string, string) {
     "",
     "If you wish, you may use the console command `unlockstats` to perform the same action.",
     "",
-    "Do check out `!iw4x console` for more information on using the in-game console."}
+    "Do check out `/iw4x console` for more information on using the in-game console."}
 
     body := strings.Join(output[:], "\n")
 
@@ -183,7 +183,7 @@ func command_fps() (string, string) {
     "    - If you would like to entirely remove the FPS limit, set `<value>` to `0`.",
     "    - It isn't recommended to exceed a limit of 333fps, as the game engine will behave erratically the higher your FPS gets.",
     "",
-    "Do check out `!iw4x console` for more information on using the in-game console."}
+    "Do check out `/iw4x console` for more information on using the in-game console."}
 
     body := strings.Join(output[:], "\n")
 
@@ -195,7 +195,7 @@ func command_fov() (string, string) {
 
     var output = []string{"You can change your FOV using the console command `cg_fov <value>`, where `<value>` is your chosen FOV. The default setting is `65`.",
     "",
-    "Do check out `!iw4x console` for more information on using the in-game console."}
+    "Do check out `/iw4x console` for more information on using the in-game console."}
 
     body := strings.Join(output[:], "\n")
 
@@ -212,7 +212,7 @@ func command_nickname() (string, string) {
     "",
     "If you wish, you may use the console command `name <mynewname>`, where `<mynewname>` is your chosen name.",
     "",
-    "Do check out `!iw4x console` for more information on using the in-game console."}
+    "Do check out `/iw4x console` for more information on using the in-game console."}
 
     body := strings.Join(output[:], "\n")
 
@@ -265,7 +265,7 @@ func command_rawfiles() (string, string) {
     "",
     "If you are replacing an older rawfiles installation, replace all conflicting files with the new ones.",
     "",
-    "For more information, see the `!iw4x install` command."}
+    "For more information, see the `/iw4x install` command."}
 
     body := strings.Join(output[:], "\n")
 
@@ -332,9 +332,9 @@ func command_stats() (string, string) {
 func command_staffhelp() (string, string) {
     header := "Available Staff Commands"
 
-    var output = []string{"- `!iw4x staffhelp` - Displays this help dialog",
-    "- `!iw4x restart` - Sends the bot a signal to restart itself",
-    "- `!iw4x uptime` - Displays bot uptime"}
+    var output = []string{"- `/iw4x-staff staffhelp` - Displays this help dialog",
+    "- `/iw4x-staff restart` - Sends the bot a signal to restart itself",
+    "- `/iw4x-staff uptime` - Displays bot uptime"}
 
     body := strings.Join(output[:], "\n")
 

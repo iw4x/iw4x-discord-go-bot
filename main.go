@@ -8,7 +8,6 @@ import (
     "os"
     "os/signal"
     "syscall"
-    "strings"
     "time"
 )
 
@@ -18,10 +17,6 @@ const base_url string = "iw4x.io/" // this variable is global and applies to bot
 
 // where the x64 platform serves its player counts
 const x64_population_url string = "http://147.135.10.99:8443/v1/population"
-
-// we'll ignore any message that doesn't
-// begin with this
-const prefix string = "!iw4x"
 
 // staff role ID for privileged command authentication
 const staff_role_id string = "1111982635955277854"
@@ -56,9 +51,15 @@ func main() {
         log.Fatal(err)
     }
 
-    // session needs a handler to process incoming messages
-    // and decide what to do with them
-    // s == pointer to discordgo.Session, m == the event we want to handle with this
+    // all bot commands are slash commands, see slash.go
+    // s == pointer to discordgo.Session, i == the event we want to handle with this
+    session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+        handle_interaction(s, i, uptime)
+    })
+
+    // the message handler is only used for the honeypot channel now
+    // message content isnt needed for that to work so the priv'd
+    // message content intent isnt required anymore
     session.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
 
         // if the author ID is the same as the session ID, do nothing
@@ -70,7 +71,7 @@ func main() {
         // and return quickly, further processing not needed
         // the 1 in the arguments here is to delete the past 1 day of history from this user
         if m.ChannelID == honeypot_channel {
-            if check_permissions(m) { // skip staff
+            if check_permissions(m.Member) { // skip staff
                 return
             }
 
@@ -89,127 +90,8 @@ func main() {
             }
             return
         }
-
-        // split up user message by spaces
-        opts := strings.Split(m.Content, " ")
-
-        // if the first opt here isn't the bot prefix, do nothing
-        if opts[0] != prefix {
-            return
-        }
-
-        if len(opts) < 2 {
-            header := "Not enough arguments!"
-            body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
-
-            if err := create_send_response(header, body, s, m); err != nil {
-                log.Print("iw4x-discord-bot: failed to send command response: ", err)
-                return
-            }
-
-            log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
-            return
-        }
-
-        // staff-only commands
-        if check_permissions(m) {
-            if is_staff_command(opts[1]) {
-                log.Print("iw4x-discord-bot: staff member: <" + m.Author.ID + ":" + m.Author.Username + "> requested command: '" + opts[1] + "'")
-                command_timer := time.Now()
-                var err error
-
-                switch staff_command := opts[1]; staff_command {
-                case "restart":
-                    log.Print("iw4x-discord-bot: triggering restart...")
-                    s.ChannelMessageSend(m.ChannelID, "gn")
-                    session.Close()
-                    os.Exit(0)
-
-                case "staffhelp":
-                    header, body := command_staffhelp()
-                    err = create_send_response(header, body, s, m)
-
-                case "uptime":
-                    output_uptime := time.Since(uptime)
-                    _, err = s.ChannelMessageSend(m.ChannelID, "awake for " + output_uptime.String())
-                }
-
-                if err != nil {
-                    log.Print("iw4x-discord-bot: failed to send response to staff command: '" + opts[1] + "': ", err)
-                    return
-                }
-
-                command_duration := time.Since(command_timer)
-                log.Print("iw4x-discord-bot: response to staff command: '" + opts[1] + "' sent in: <", command_duration, ">")
-                return
-            }
-        }
-
-        if len(opts) > 2 { // if too many opts are given, return
-            header := "Too many arguments!"
-            body := "Expected `!iw4x <option>`.\nSee `!iw4x help` for more information on valid commands."
-            if err := create_send_response(header, body, s, m); err != nil {
-                log.Print("iw4x-discord-bot: failed to send command response: ", err)
-                return
-            }
-            log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
-            return
-        }
-
-        // function map, maps key (user input command) to value pair (function name)
-        // every function in this map will return (string, string) - header, body
-        // this could probably be a map of structs with predefined header/body values instead
-        // but this allows for additional complexity with the command output if needed and doesn't slow down too much
-        commands := map[string]func() (string, string) {
-            "help": command_help,
-            "install": command_install,
-            "docs": command_docs,
-            "discord": command_discord,
-            "github": command_github,
-            "repair": command_repair,
-            "dedicated": command_dedicated,
-            "vcredist": command_vcredist,
-            "unlockstats": command_unlockstats,
-            "performance": command_performance,
-            "fps": command_fps,
-            "fov": command_fov,
-            "nickname": command_nickname,
-            "console": command_console,
-            "dxr": command_dxr,
-            "rawfiles": command_rawfiles,
-            "game": command_game,
-            "dlc": command_dlc,
-            "stats": command_stats,
-        }
-
-        // `command` here is the keys associated value if the key exists, in this case a function name
-        // this checks to see if opts[1] (user input post-prefix) has a matching key
-        // in the function map, `exists` is what is being tested here
-        if command, exists := commands[opts[1]]; exists {
-            command_timer := time.Now() // starts a timer
-            log.Print("iw4x-discord-bot: command: '" + opts[1] + "' requested by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
-            header, body := command() // calls `command` as a function, of which will be one of the matching key values
-            if err := create_send_response(header, body, s, m); err != nil {
-                log.Print("iw4x-discord-bot: failed to send command response: ", err)
-                return
-            }
-            command_duration := time.Since(command_timer)
-            log.Print("iw4x-discord-bot: response to command: '" + opts[1] + "' from user: <" + m.Author.ID +  ":" + m.Author.Username + "> sent in: <",  command_duration,  ">")
-            return
-        } else {
-            log.Print("iw4x-discord-bot: invalid command issued by user: <" + m.Author.ID + ":" + m.Author.Username + ">")
-            header := "Invalid option!"
-            body := "Invalid bot command: `" + opts[1] + "`\nSee `!iw4x help` for more information on valid commands."
-            if err := create_send_response(header, body, s, m); err != nil {
-                log.Print("iw4x-discord-bot: failed to send command response: ", err)
-                return
-            }
-            return
-        }
-
     })
 
-    // since the above is set to trigger on message send,
     // this is set to trigger on Ready to set bot status
     var stale_status chan bool // this is nil on first run
     // when discord sends a new ready, the new thread will signal the old one to stop
@@ -317,6 +199,14 @@ func main() {
     }
 
     log.Print("iw4x-discord-bot: active")
+
+    // register slash commands with discord
+    // this happens every startup so itll overwrite whatever got registered previously
+    if err := register_commands(session); err != nil {
+        log.Print("iw4x-discord-bot: failed to register slash commands: ", err)
+    } else {
+        log.Print("iw4x-discord-bot: registered slash commands")
+    }
 
     // we can just start the counter here, its fine as soon as
     // the session is ready

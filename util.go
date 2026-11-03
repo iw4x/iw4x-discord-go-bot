@@ -32,24 +32,6 @@ type X64Population struct {
     Playlists map[string]int `json:"playlists"`
 }
 
-// builds embeds and sends output for all commands
-// header and body are passed into this from the function map call below,
-// map call fetches this information from each commands function in commands.go
-func create_send_response(header string, body string, s *discordgo.Session, m *discordgo.MessageCreate) (error) {
-    embed := &discordgo.MessageEmbed {
-        Title: header,
-        Description: body,
-        Color: 0x0ff00,
-    }
-
-    _, err := s.ChannelMessageSendEmbed(m.ChannelID, embed)
-    if err != nil {
-        return err
-    }
-
-    return nil
-}
-
 // builds and sends output for player count in status
 func create_send_status(s *discordgo.Session) (error) {
     // neither of these return so the bot can apply its "Currently sleeping.." status
@@ -187,13 +169,13 @@ func fetch_x64_population() (X64Population, error) {
 
 // this is explicitly for staff only commands, and checks whether or not
 // the command issuer has the 'staff' role or not- if not, it will return 1.
-func check_permissions(m *discordgo.MessageCreate) (bool) {
+// member is nil for webhook messages and anything outside of a guild
+func check_permissions(member *discordgo.Member) (bool) {
     // https://pkg.go.dev/github.com/bwmarrin/discordgo#Member
-    if slices.Contains(m.Member.Roles, staff_role_id) {
-        return true
-    } else {
+    if member == nil {
         return false
     }
+    return slices.Contains(member.Roles, staff_role_id)
 }
 
 func send_join_message(s *discordgo.Session, joiner_id string) (error) {
@@ -218,7 +200,7 @@ func send_join_message(s *discordgo.Session, joiner_id string) (error) {
         "    Experiencing stuttering or low FPS? Check out our optimization tips: [guides/performance](<https://docs.iw4x.io/guides/performance/>)",
         "",
         "### Still need help?",
-        "* Type `!iw4x help` for a list of helpful bot commands.",
+        "* Type `/iw4x help` for a list of helpful bot commands.",
         "* If your question isn't answered above, feel free to ask in <#1111982470045368361>.",
         "* If you are reporting a bug or have a more complex issue, please create a thread in <#1420088697960796170>.",
         "",
@@ -233,8 +215,4 @@ func send_join_message(s *discordgo.Session, joiner_id string) (error) {
     }
 
     return nil
-}
-
-func is_staff_command(opt string) (bool) {
-    return slices.Contains([]string{"restart", "staffhelp", "uptime"}, opt)
 }

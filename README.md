@@ -4,31 +4,31 @@ This is the bot for the [IW4x](https://iw4x.io/) Discord server, and at the mome
 
 # Current valid command list:
 
-- `!iw4x help` - Displays this help dialog
-- `!iw4x install` - Information about installing IW4x.
-- `!iw4x docs` - IW4x documentation
-- `!iw4x discord` - Displays the invite link for this server
-- `!iw4x github` - Displays the link to IW4x source code.
-- `!iw4x repair` - Information on repairing your game files
-- `!iw4x dedicated` - Information on setting up a dedicated server
-- `!iw4x vcredist` - Information on installing VC++ Redistributables
-- `!iw4x unlockstats` - Information on unlocking all items in the game
-- `!iw4x performance` - Information on improving the games performance
-- `!iw4x fps` - Information on changing the FPS limit
-- `!iw4x fov` - Information on changing your FOV
-- `!iw4x nickname` - Information on changing your in-game name
-- `!iw4x console` - Information on the in-game command console
-- `!iw4x dxr` - Information on installing DirectX and VC++ Redistributables (Error 0xc000007b)
-- `!iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles
-- `!iw4x game` - Information on supported copies of MW2
-- `!iw4x dlc` - Information on MW2 and IW4x DLC
-- `!iw4x stats` - Information on IW4x server statistics
+- `/iw4x help` - Displays this help dialog
+- `/iw4x install` - Information about installing IW4x.
+- `/iw4x docs` - IW4x documentation
+- `/iw4x discord` - Displays the invite link for this server
+- `/iw4x github` - Displays the link to IW4x source code.
+- `/iw4x repair` - Information on repairing your game files
+- `/iw4x dedicated` - Information on setting up a dedicated server
+- `/iw4x vcredist` - Information on installing VC++ Redistributables
+- `/iw4x unlockstats` - Information on unlocking all items in the game
+- `/iw4x performance` - Information on improving the games performance
+- `/iw4x fps` - Information on changing the FPS limit
+- `/iw4x fov` - Information on changing your FOV
+- `/iw4x nickname` - Information on changing your in-game name
+- `/iw4x console` - Information on the in-game command console
+- `/iw4x dxr` - Information on installing DirectX and VC++ Redistributables (Error 0xc000007b)
+- `/iw4x rawfiles` - Information on installing/repairing iw4x-rawfiles
+- `/iw4x game` - Information on supported copies of MW2
+- `/iw4x dlc` - Information on MW2 and IW4x DLC
+- `/iw4x stats` - Information on IW4x server statistics
 
 # Current valid staff command list:
 
-- `!iw4x staffhelp` - Displays this help dialog
-- `!iw4x restart` - Sends the bot a signal to restart itself (service manager dependent)
-- `!iw4x uptime` - Displays bot uptime
+- `/iw4x-staff staffhelp` - Displays this help dialog
+- `/iw4x-staff restart` - Sends the bot a signal to restart itself (service manager dependent)
+- `/iw4x-staff uptime` - Displays bot uptime
 
 # Building
 
@@ -44,6 +44,10 @@ System dependencies: `go`, (see go.mod for versioning info), though this should 
 As this produces a single binary, it can simply be run as (preferably) part of a system service (it is service manager agnostic), or with a script, or in a tmux/screen session, or however else desired.
 
 The environment variable `IW4X_DISCORD_BOT_TOKEN` must be set- and should of course contain the token for the bot.
+
+All commands are slash commands and are registered with Discord automatically on startup. The bot must be invited with the `applications.commands` scope (in addition to `bot`) for them to appear. The privileged Message Content intent is not required.
+
+Staff commands are restricted to the staff role at runtime. If you'd rather hide `/iw4x-staff` from everyone else entirely, add a role override for it under Server Settings → Integrations.
 
 # Misc
 
