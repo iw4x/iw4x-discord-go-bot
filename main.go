@@ -19,7 +19,7 @@ const base_url string = "iw4x.io/" // this variable is global and applies to bot
 const x64_population_url string = "http://147.135.10.99:8443/v1/population"
 
 // staff role ID for privileged command authentication
-const staff_role_id string = "1111982635955277854"
+const staff_role_id string = "1456340616752664833"
 
 // the honeypot channel ID
 // the bot will watch this channel and autoban anyone who sends a message there
